@@ -23,7 +23,11 @@ import sys
 from datetime import date, datetime, timedelta
 from pathlib import Path
 
-DATE_BULLET = re.compile(r"^- \*\*(\d{4}-\d{2}-\d{2})\*\*\s*$")
+# NOTE: no trailing `$` — the Daily Index uses a one-line-per-day format
+# (`- **date** → daily/date.md — topics`), not date-only bullets with indented
+# sub-items. The stricter `\s*$` (upstream) never matched, so prune_daily_index
+# silently stopped enforcing the 7-day window (8+ entries accumulated).
+DATE_BULLET = re.compile(r"^- \*\*(\d{4}-\d{2}-\d{2})\*\*")
 SECTION_HEADER = re.compile(r"^## ")
 DAILY_INDEX_HEADER = re.compile(r"^## Daily Index\b")
 WEEK_HEADER = re.compile(r"^### Week of (\d{4}-\d{2}-\d{2})\s*$", re.MULTILINE)
@@ -187,7 +191,7 @@ def compact_daily_index(text: str, home: Path) -> tuple[str, int]:
     compacted = 0
     for i in range(start, end):
         line = lines[i]
-        m = re.match(r"^- \*\*(\d{4}-\d{2}-\d{2})\*\*", line)
+        m = DATE_BULLET.match(line)
         if not m or len(line.rstrip("\n")) <= MAX_INDEX_LINE:
             continue
         d = m.group(1)
@@ -223,7 +227,7 @@ def main() -> int:
             # Atomic write (temp + rename): under concurrent sessions writing
             # _recent.md, a plain write_text can leave a partially-written file.
             # os-level replace on the same filesystem is atomic.
-            tmp = recent.with_name(recent.name + ".tmp")
+            tmp = recent.with_name(f"{recent.name}.{os.getpid()}.tmp")
             tmp.write_text(new_text, encoding="utf-8")
             tmp.replace(recent)
         except Exception:
