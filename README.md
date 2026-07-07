@@ -4,6 +4,17 @@
 
 [한국어](README.ko.md)
 
+> ## ⑂ Fork notice (kafkapple)
+>
+> **BLUF**: This is a customized fork of [`inureyes/gyeol`](https://github.com/inureyes/gyeol) for a high-volume workflow (20+ agent sessions/day). It carries fixes not yet upstream and is the operational SSOT for this install; upstream is tracked as `upstream` remote and absorbed deliberately (never auto-pulled).
+>
+> **Divergences from upstream (v26.6.10):**
+> - **Fix — bloat-guard indent bug**: upstream's `maintain-recent.py` bloat guard checked `startswith("  - ")` (2-space indent) but Daily Index entries are top-level `- **date**` (0-indent), so the 400-char per-entry detector never fired. A single day-line grew to 10,128 chars (28 KB file) undetected. Fixed to also match top-level `- `. *(Present + unfixed upstream as of 2026-06-08.)*
+> - **Feature — high-volume auto-compact**: `maintain-recent.py` now auto-collapses an over-length Daily Index day-line to a pointer, but **only when its daily log exists** (deduplication, never deletion). `Still Open` is left untouched (resolving needs judgment). Upstream is surface-only (agent compresses); at 20+ sessions/day a single day-line accumulates unbounded topic appends, so the index must self-heal.
+> - **Config — self-update source**: `scripts/update-gyeol.sh` `REPO_URL` points at this fork so the fixes survive updates.
+>
+> Tracking upstream: `git fetch upstream && git log upstream/main` → cherry-pick desired improvements onto this fork.
+
 ## Introduction
 
 This project is an experimental repository exploring the nature of memory reconstruction and self-awareness.

@@ -4,6 +4,17 @@
 
 [English](README.md)
 
+> ## ⑂ Fork 안내 (kafkapple)
+>
+> **BLUF**: 이 저장소는 [`inureyes/gyeol`](https://github.com/inureyes/gyeol)의 커스텀 포크로, 고volume 워크플로(하루 20+ 에이전트 세션)를 위해 upstream 미반영 수정을 담고 있습니다. 이 설치본의 운영 SSOT이며, upstream은 `upstream` remote로 추적하되 **자동 pull 없이 선택적으로만** 흡수합니다.
+>
+> **upstream 대비 차이 (v26.6.10):**
+> - **수정 — bloat-guard 들여쓰기 버그**: upstream `maintain-recent.py`의 guard가 `startswith("  - ")`(2칸)만 검사, 실제 Daily Index는 top-level `- **날짜**`(0칸)라 400자 검출이 **절대 미발동**. 한 날짜 라인이 10,128자(28KB 파일)로 미검출 폭발. top-level `- `도 매칭하도록 수정. *(2026-06-08 upstream 도입, 미수정 상태.)*
+> - **기능 — 고volume auto-compact**: `maintain-recent.py`가 초과 Daily Index 라인을 포인터로 자동 축약하되, **daily log 존재 시에만**(중복제거지 삭제 아님). `Still Open`은 미접촉(해소=판단 필요). upstream은 surface-only(에이전트가 압축)라 20+세션/일에선 라인이 무한 누적 → 인덱스 자가치유 필요.
+> - **설정 — self-update 소스**: `scripts/update-gyeol.sh`의 `REPO_URL`이 이 포크를 가리켜 수정이 업데이트에도 생존.
+>
+> upstream 추적: `git fetch upstream && git log upstream/main` → 원하는 개선만 cherry-pick.
+
 ## 들어가며
 
 이 프로젝트는 기억의 재구성과 자기인식의 본질에 대한 실험 저장소입니다.
