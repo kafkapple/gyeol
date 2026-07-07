@@ -220,7 +220,12 @@ def main() -> int:
     new_text, compacted = compact_daily_index(new_text, home)
     if (dropped > 0 or compacted > 0) and new_text != text:
         try:
-            recent.write_text(new_text, encoding="utf-8")
+            # Atomic write (temp + rename): under concurrent sessions writing
+            # _recent.md, a plain write_text can leave a partially-written file.
+            # os-level replace on the same filesystem is atomic.
+            tmp = recent.with_name(recent.name + ".tmp")
+            tmp.write_text(new_text, encoding="utf-8")
+            tmp.replace(recent)
         except Exception:
             new_text = text  # write failed; continue with original
 
