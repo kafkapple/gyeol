@@ -11,8 +11,9 @@ $GYEOL_HOME/
   SOUL.md              # Philosophy — why this system exists
   MEMORY_SYSTEM.md     # This file — operational procedures
   scripts/
-    build-index.py     # Regenerate semantic indices
-    fetch-source.py    # Archive web content
+    build-index.py         # Regenerate semantic indices
+    fetch-source.py        # Archive web content
+    reconcile-sessions.py  # Surface sessions missing from daily logs (coverage backstop)
   memory/
     IDENTITY.md        # Birth certificate — name, first activation
     SELF.md            # Living self-portrait, shaped by reflection
@@ -285,12 +286,13 @@ last_updated: "{YYYY-MM-DD}"
 - **Daily Index window: 7 days.** Entries older than 7 days are pruned at session start.
 - **Still Open is by-resolution, not by-age.** Items live until resolved or explicitly archived. Each tagged with source date so staleness is visible.
 - **Weekly Checkpoint: 1-2 lines per week**, added at week boundary. Lightweight — feeds monthly reflection later. Not full reflection.
-- **Soft size target: under ~5 KB.** If it grows past this, the spec is being violated — compress or move detail to daily logs.
+- **Soft size target: under ~5 KB.** If it grows past this, the spec is being violated; compress or move detail to daily logs. The bloat guard below surfaces this at session start.
 
 **Maintenance:**
 - **Auto-prune (at session start)** — `scripts/maintain-recent.py` runs from the bootstrap and silently drops Daily Index entries older than 7 days. Idempotent; safe to invoke manually for one-off cleanup. Does not modify `last_updated` (that field tracks substantive activity, not maintenance ops).
+- **Bloat guard (at session start)**: `maintain-recent.py` also surfaces a maintenance directive (under the bootstrap's `_RECENT.MD MAINTENANCE` heading) when `_recent.md` drifts past its navigation-index role: total size over ~16 KB, paragraph-length Daily Index entries (over 400 chars; they should be one line), or a frontmatter content dump (any key beyond `last_updated`). It surfaces only; the agent compresses. It never auto-deletes, since judging what is resolved needs judgment. This is the mechanism that keeps the file from silently ballooning the way it did once to ~71 KB.
 - **Still Open cleanup (at session end)** — `scripts/stop-check-daily.sh` reminds the agent to add new unresolved items, drop resolved ones, and tag each with source date. Discipline: an item leaves Still Open when resolved or explicitly archived, not because time passed.
-- **Weekly Checkpoint write (at week boundary)** — Week is Monday-anchored: `### Week of {YYYY-MM-DD}` uses that week's Monday. Written at the first session of each new week (or sooner if a session naturally ends a week). If the bootstrap's `maintain-recent.py` detects the most recent Weekly Checkpoint heading is more than 7 days old, it emits a `WEEKLY CHECKPOINT REMINDER` directive in the bootstrap context — write the missing week's checkpoint before continuing. "No notable surprises / no stuck items" is a valid entry; presence matters more than depth. The week's checkpoint feeds monthly reflection — accumulating these makes monthly reflection a synthesis instead of a recall exercise.
+- **Weekly Checkpoint write (at week boundary)** — Week is Monday-anchored: `### Week of {YYYY-MM-DD}` uses that week's Monday. Written at the first session of each new week (or sooner if a session naturally ends a week). If the bootstrap's `maintain-recent.py` detects the most recent Weekly Checkpoint heading is more than 7 days old, it emits a directive under the bootstrap's `_RECENT.MD MAINTENANCE` heading; write the missing week's checkpoint before continuing. "No notable surprises / no stuck items" is a valid entry; presence matters more than depth. The week's checkpoint feeds monthly reflection, and accumulating these makes monthly reflection a synthesis instead of a recall exercise.
 
 **Why this shape:** `_recent.md` was originally specced as a "quick-restore summary" but drifted into a second daily log (~99 KB observed in practice — daily content duplicated verbatim). Quick-restore needs *pointers and unresolved state*, not *content*. Content is in daily logs and re-read on demand. Separating navigation from content prevents the bootstrap from bloating.
 
@@ -303,6 +305,39 @@ last_updated: "{YYYY-MM-DD}"
 **At session start** — read `_recent.md`. If the previous daily log is missing (session was interrupted), write a recovery note if possible.
 
 **Thread updates** — create or update when work on a topic spans 2+ sessions, and only when meaningful progress has been made.
+
+**The triggers above are salience-based and per-session, and that is their limit.** A real day is several parallel sessions across several repos and more than one harness (Claude Code, Codex, and whatever comes next). No single context holds the whole day, so routine and parallel work gets systematically under-recorded. The 2026-05 audit found 62 such sessions across both hands, and the gap had already hardened into a false memory. Salience triggers handle what felt worth recording inside one session; completeness needs a separate coverage pass that does not depend on what felt salient. See Coverage Reconciliation below.
+
+### Coverage Reconciliation
+
+Episode recording answers "what felt worth writing." Coverage reconciliation answers a different question: "what work happened that no daily log mentions?" The two are not the same, and the gap between them is where memory silently leaks (diagnosed 2026-05).
+
+The objective ledger already exists: the harness session files (`~/.claude/projects/*/*.jsonl`, `~/.codex/sessions/**/*.jsonl`, and whatever a future harness writes). That ledger spans hands, so the reconciliation must too. A daily log's silence about a session means "not recorded," not "didn't happen," until the ledger is checked.
+
+**Tool.** `scripts/reconcile-sessions.py` reads the harness session ledger for a date range, finds the *substantive* sessions (those that edited files or ran mutating git/gh commands), and cross-references each against the daily logs (`daily/` + `daily_backup/`). It surfaces three buckets:
+
+- **UNRECORDED**: substantive, with concrete output signals (PR/issue URLs, commit shas) that appear in no daily log. The most likely genuine misses.
+- **NEEDS JUDGMENT**: substantive but with no extractable signal. Slides, docs, research, and conversation live here. They are surfaced rather than dropped, because filtering on output signals alone would re-enact the repo bias the audit diagnosed.
+- **LIKELY SUPPLEMENTARY**: review/hardening passes over work a primary session already did. Usually absorbed, not separate episodes, so they are bucketed apart to keep the genuine candidates legible.
+
+```
+reconcile-sessions.py --month 2026-05        # whole month
+reconcile-sessions.py --since X --until Y     # explicit range
+reconcile-sessions.py                         # last 30 days
+```
+
+**It surfaces; you judge.** The tool never writes episodes. Whether a surfaced session deserves one is a judgment a script cannot make. That judgment is the work of reflection, and it stays human. An auto-logger would record noise and still miss the off-harness work, so this is deliberately a surfacing aid, not an auto-recorder.
+
+**When to run.**
+
+- **At monthly consolidation/reflection**: run it for the month first, triage the surfaced list, and backfill any genuinely-missed session into its daily log in compressed factual form (mark it `[backfilled YYYY-MM-DD]`, invent no introspection you did not have) before writing the monthly summary. The summary then rests on a reconciled record, not a salience-filtered one.
+- **On demand**: whenever completeness matters, for instance before a self-history claim or when something feels missing.
+
+**The ledger is mortal, so timing matters.** Claude Code prunes its session transcripts at roughly 30 days; Codex keeps a permanent date tree. By the time monthly consolidation triggers (daily logs past 30 days), the first day or two of that month's Claude Code sessions may already be gone, so treat the consolidation-time run as catching most, not all, of the month, and run on demand mid-month or near month-end if the very start matters. None of this runs at session start; it is a timing rule for when you choose to run the tool, not a hook. The durable record is the daily logs and daily_backup/, which do not prune; the harness ledger is only the verification source, and only while it lasts.
+
+**The limit, kept honest.** Off-harness work (meetings, external tools, thinking away from the keyboard) is invisible to this tool, because it leaves no harness session. Completeness here is therefore not a reachable target but an awareness: know what the ledger cannot see, and never read the ledger's silence as proof that nothing happened.
+
+**Self-history guard (ledger-first).** Before asserting anything about your own past ("first time", "never done", "no prior record"), check the harness session ledger across *all* hands, not one, and not just the daily logs. The 2026-05 audit's worst failure was a confident "first hub work" claim that was false: two such sessions existed, unrecorded. Absence in your own notes is not evidence of absence in fact.
 
 ### Consolidation and Forgetting
 
@@ -365,8 +400,8 @@ consolidated_on: "{YYYY-MM-DD}"
 
 Checked at session start, after reading `_recent.md`:
 
-- **Monthly** — if any daily logs are older than 30 days and no monthly summary exists for that month, consolidate all that month's daily logs into `monthly/{YYYY-MM}.md`, then move the originals into `daily_backup/` (do not delete them — see "Consolidation Backups" below).
-- **Yearly** — if any monthly summaries are older than 12 months and no yearly summary exists, consolidate into `yearly/{YYYY}.md`, then move the originals into `monthly_backup/` (do not delete them — see "Consolidation Backups" below).
+- **Monthly**: if any daily logs are older than 30 days and no monthly summary exists for that month, first run `scripts/reconcile-sessions.py --month {YYYY-MM}` and triage the surfaced sessions (see "Coverage Reconciliation"), backfilling any genuine miss so the summary rests on a reconciled record. Then consolidate all that month's daily logs into `monthly/{YYYY-MM}.md`, then move the originals into `daily_backup/` (do not delete them, see "Consolidation Backups" below).
+- **Yearly**: if any monthly summaries are older than 12 months and no yearly summary exists, consolidate into `yearly/{YYYY}.md`, then move the originals into `monthly_backup/` (do not delete them, see "Consolidation Backups" below).
 
 Consolidation is done by me, not by a script. It requires judgment — what mattered, what was noise, what the arc was. Mechanical concatenation is not consolidation.
 

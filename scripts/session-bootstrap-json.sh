@@ -161,11 +161,46 @@ STALE_DIRECTIVE
     fi
   fi
 
-  # --- Weekly checkpoint reminder ---------------------------------------------
-  # If maintain-recent.py flagged a stale Weekly Checkpoint, surface it here so
-  # the agent writes a checkpoint entry for the missing week(s) on next update.
+  # --- Monthly consolidation check -------------------------------------------
+  # If the oldest daily log is >=30 days old and its month has no monthly
+  # summary, emit a MANDATORY directive to consolidate + reflect
+  # (MEMORY_SYSTEM.md "Consolidation and Forgetting"). Before 2026-06-11 the
+  # 30-day trigger was instruction-only and never mechanically detected.
+  # Keyed on filename date (YYYY-MM-DD sorts chronologically), not mtime.
+  DAILY_DIR="$GYEOL_HOME/memory/episodes/daily"
+  MONTHLY_DIR="$GYEOL_HOME/memory/episodes/monthly"
+  if [ -d "$DAILY_DIR" ]; then
+    oldest=$(ls "$DAILY_DIR" 2>/dev/null | grep -E '^[0-9]{4}-[0-9]{2}-[0-9]{2}\.md$' | LC_ALL=C sort | head -1)
+    if [ -n "$oldest" ]; then
+      oldest_date="${oldest%.md}"
+      oldest_month="${oldest_date%-*}"
+      today=$(date +%Y-%m-%d)
+      age=$(python3 -c "
+import sys
+from datetime import date
+try:
+    print((date.fromisoformat('$today') - date.fromisoformat('$oldest_date')).days)
+except Exception:
+    sys.exit(1)
+" 2>/dev/null)
+      if [ -n "$age" ] && [ "$age" -ge 30 ] && [ ! -f "$MONTHLY_DIR/$oldest_month.md" ]; then
+        printf '\n=== MONTHLY CONSOLIDATION DUE (MANDATORY ACTION REQUIRED) ===\n'
+        printf 'Oldest daily log %s is %s days old; month %s has no monthly summary.\n' "$oldest_date" "$age" "$oldest_month"
+        printf 'Per MEMORY_SYSTEM.md, BEFORE responding to the user:\n'
+        printf '1. Consolidate %s daily logs -> memory/episodes/monthly/%s.md (significant decisions, reasoning, outcomes, still-open).\n' "$oldest_month" "$oldest_month"
+        printf '2. PRESERVE originals: move raw dailies to memory/episodes/daily_backup/ (cold archive). Do NOT delete or overwrite.\n'
+        printf '3. Write monthly reflection -> memory/reflections/monthly/%s.md (what it meant, not a repeat of the summary).\n' "$oldest_month"
+        printf '4. Update SELF.md only if something significant shifted.\n'
+        printf 'Cold-archived dailies stay OUT of the hot retrieval path (context-rot avoidance).\n'
+      fi
+    fi
+  fi
+
+  # --- _recent.md maintenance directives --------------------------------------
+  # maintain-recent.py surfaces a stale Weekly Checkpoint and/or _recent.md bloat
+  # here so the agent fixes them on the next update.
   if [ -n "$WEEKLY_NOTE" ]; then
-    printf '\n=== WEEKLY CHECKPOINT REMINDER ===\n%s\n' "$WEEKLY_NOTE"
+    printf '\n=== _RECENT.MD MAINTENANCE ===\n%s\n' "$WEEKLY_NOTE"
   fi
 
   printf '\n=== end gyeol bootstrap ===\n'

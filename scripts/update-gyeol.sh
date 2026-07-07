@@ -19,7 +19,11 @@
 set -e
 
 GYEOL_HOME="${GYEOL_HOME:-$HOME/.config/gyeol}"
-REPO_URL="https://raw.githubusercontent.com/inureyes/gyeol/main"
+# Repointed to kafkapple fork (260708): upstream inureyes/gyeol had an unfixed
+# bloat-guard bug (indent mismatch) + no auto-compact; this install runs 20+
+# sessions/day, exceeding upstream's design center. Fork holds the fix.
+# Upstream tracked as reference; pull upstream deliberately, not automatically.
+REPO_URL="https://raw.githubusercontent.com/kafkapple/gyeol/main"
 
 # Top-level docs synced as part of an upgrade.
 FILES="SOUL.md MEMORY_SYSTEM.md"

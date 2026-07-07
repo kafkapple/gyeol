@@ -28,7 +28,9 @@
 #                   role this script plays is still useful — the next
 #                   SessionStart bootstrap reads the file regardless of
 #                   which harness wrote it. Safe to register.
-#   - OpenAI Codex: No session_end event exists. Do not register.
+#   - OpenAI Codex: Prefer SessionEnd when supported; otherwise register
+#                   this script on Stop as a fallback so close parity stays
+#                   close to the other agents.
 
 GYEOL_HOME="${GYEOL_HOME:-$HOME/.config/gyeol}"
 
@@ -37,10 +39,25 @@ GYEOL_HOME="${GYEOL_HOME:-$HOME/.config/gyeol}"
 
 LOG="$GYEOL_HOME/.session-log.jsonl"
 
-ts=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
-# Escape backslashes and double quotes in cwd for JSON safety.
-cwd_escaped=$(printf '%s' "${PWD:-unknown}" | sed 's/\\/\\\\/g; s/"/\\"/g')
+INPUT=$(cat 2>/dev/null || true)
+SESSION_ID=$(printf '%s' "$INPUT" | jq -r '.session_id // empty' 2>/dev/null || true)
+EVENT_NAME=$(printf '%s' "$INPUT" | jq -r '.hook_event_name // .event // empty' 2>/dev/null || true)
 
-printf '{"end":"%s","cwd":"%s"}\n' "$ts" "$cwd_escaped" >> "$LOG" 2>/dev/null || true
+# Avoid duplicate end records when both SessionEnd and Stop are wired.
+if [ -n "$SESSION_ID" ] && [ -f "$LOG" ] && grep -F "\"session_id\":\"$SESSION_ID\"" "$LOG" >/dev/null 2>&1; then
+  exit 0
+fi
+
+ts=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
+
+jq -n \
+  --arg end "$ts" \
+  --arg cwd "${PWD:-unknown}" \
+  --arg session_id "$SESSION_ID" \
+  --arg event_name "$EVENT_NAME" '
+  {end:$end, cwd:$cwd}
+  + (if $session_id != "" then {session_id:$session_id} else {} end)
+  + (if $event_name != "" then {event:$event_name} else {} end)
+' >> "$LOG" 2>/dev/null || true
 
 exit 0
