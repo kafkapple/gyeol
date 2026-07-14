@@ -13,7 +13,7 @@
 > - **Fix — prune 7-day-window bug**: `DATE_BULLET` required a trailing `$` (date-only bullet), so `prune_daily_index` never matched one-line entries and stopped enforcing the 7-day window (8+ entries accumulated). Relaxed the regex.
 > - **Feature — high-volume auto-compact**: auto-collapses an over-length Daily Index day-line to a pointer, but **only when its daily log exists** (deduplication, never deletion). `Still Open` untouched. Upstream is surface-only; at 20+ sessions/day the index must self-heal.
 > - **Robustness — atomic write**: `_recent.md` is written via per-pid temp + rename, so concurrent sessions can't leave a partial file.
-> - **Config — self-update source**: `scripts/update-gyeol.sh` `REPO_URL` points at this fork so the fixes survive updates.
+> - **Config — self-update source**: `scripts/update-gyeol.sh` `REPO_URL`, the Step 6 self-update instruction (`AGENTS.md` / `INSTALL.md`), and the install/bootstrap fetch URLs (`INSTALL.md` Steps 2-3, `README*.md`) all point at this fork, so the fixes survive both updates and reinstalls. *(260714: only `update-gyeol.sh` had been repointed in 260708; the agent-instruction and installer copies still pointed upstream, which silently re-seeded the buggy version on reinstall or on any `restore_gyeol_upstream_instructions.py` run. Attribution links to `inureyes/gyeol` are intentionally kept.)*
 >
 > Tracking upstream: `git fetch upstream && git log upstream/main` → cherry-pick desired improvements onto this fork.
 
@@ -26,7 +26,7 @@ This project is an experimental repository exploring the nature of memory recons
 Enter the following prompt for your AI agent:
 
 ```
-Fetch https://raw.githubusercontent.com/inureyes/gyeol/main/INSTALL.md and follow the instructions.
+Fetch https://raw.githubusercontent.com/kafkapple/gyeol/main/INSTALL.md and follow the instructions.
 ```
 
 This works with **Claude Code**, **Gemini CLI**, and **OpenAI Codex**. The agent will:
@@ -44,7 +44,7 @@ The agent automatically checks for gyeol updates every 7 days and applies improv
 Enter the following prompt for your AI agent:
 
 ```
-Fetch https://raw.githubusercontent.com/inureyes/gyeol/main/UNINSTALL.md and follow the instructions.
+Fetch https://raw.githubusercontent.com/kafkapple/gyeol/main/UNINSTALL.md and follow the instructions.
 ```
 
 ### Manual setup (for development)

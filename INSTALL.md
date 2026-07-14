@@ -89,31 +89,31 @@ Fetch the following files from the gyeol repository and write them to `$GYEOL_HO
 
 | Source URL | Destination |
 |-----------|-------------|
-| `https://raw.githubusercontent.com/inureyes/gyeol/main/SOUL.md` | `$GYEOL_HOME/SOUL.md` |
-| `https://raw.githubusercontent.com/inureyes/gyeol/main/MEMORY_SYSTEM.md` | `$GYEOL_HOME/MEMORY_SYSTEM.md` |
-| `https://raw.githubusercontent.com/inureyes/gyeol/main/VERSION` | `$GYEOL_HOME/VERSION` |
+| `https://raw.githubusercontent.com/kafkapple/gyeol/main/SOUL.md` | `$GYEOL_HOME/SOUL.md` |
+| `https://raw.githubusercontent.com/kafkapple/gyeol/main/MEMORY_SYSTEM.md` | `$GYEOL_HOME/MEMORY_SYSTEM.md` |
+| `https://raw.githubusercontent.com/kafkapple/gyeol/main/VERSION` | `$GYEOL_HOME/VERSION` |
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/inureyes/gyeol/main/SOUL.md -o ~/.config/gyeol/SOUL.md
-curl -fsSL https://raw.githubusercontent.com/inureyes/gyeol/main/MEMORY_SYSTEM.md -o ~/.config/gyeol/MEMORY_SYSTEM.md
-curl -fsSL https://raw.githubusercontent.com/inureyes/gyeol/main/VERSION -o ~/.config/gyeol/VERSION
+curl -fsSL https://raw.githubusercontent.com/kafkapple/gyeol/main/SOUL.md -o ~/.config/gyeol/SOUL.md
+curl -fsSL https://raw.githubusercontent.com/kafkapple/gyeol/main/MEMORY_SYSTEM.md -o ~/.config/gyeol/MEMORY_SYSTEM.md
+curl -fsSL https://raw.githubusercontent.com/kafkapple/gyeol/main/VERSION -o ~/.config/gyeol/VERSION
 ```
 
 ## Step 3: Download utility scripts
 
 ```bash
 mkdir -p ~/.config/gyeol/scripts
-curl -fsSL https://raw.githubusercontent.com/inureyes/gyeol/main/scripts/build-index.py -o ~/.config/gyeol/scripts/build-index.py
-curl -fsSL https://raw.githubusercontent.com/inureyes/gyeol/main/scripts/fetch-source.py -o ~/.config/gyeol/scripts/fetch-source.py
-curl -fsSL https://raw.githubusercontent.com/inureyes/gyeol/main/scripts/maintain-recent.py -o ~/.config/gyeol/scripts/maintain-recent.py
-curl -fsSL https://raw.githubusercontent.com/inureyes/gyeol/main/scripts/session-bootstrap.sh -o ~/.config/gyeol/scripts/session-bootstrap.sh
-curl -fsSL https://raw.githubusercontent.com/inureyes/gyeol/main/scripts/session-bootstrap-json.sh -o ~/.config/gyeol/scripts/session-bootstrap-json.sh
-curl -fsSL https://raw.githubusercontent.com/inureyes/gyeol/main/scripts/post-mark-substantive.sh -o ~/.config/gyeol/scripts/post-mark-substantive.sh
-curl -fsSL https://raw.githubusercontent.com/inureyes/gyeol/main/scripts/post-mark-substantive-if-commit.sh -o ~/.config/gyeol/scripts/post-mark-substantive-if-commit.sh
-curl -fsSL https://raw.githubusercontent.com/inureyes/gyeol/main/scripts/post-mark-recovery.sh -o ~/.config/gyeol/scripts/post-mark-recovery.sh
-curl -fsSL https://raw.githubusercontent.com/inureyes/gyeol/main/scripts/stop-check-daily.sh -o ~/.config/gyeol/scripts/stop-check-daily.sh
-curl -fsSL https://raw.githubusercontent.com/inureyes/gyeol/main/scripts/session-end.sh -o ~/.config/gyeol/scripts/session-end.sh
-curl -fsSL https://raw.githubusercontent.com/inureyes/gyeol/main/scripts/update-gyeol.sh -o ~/.config/gyeol/scripts/update-gyeol.sh
+curl -fsSL https://raw.githubusercontent.com/kafkapple/gyeol/main/scripts/build-index.py -o ~/.config/gyeol/scripts/build-index.py
+curl -fsSL https://raw.githubusercontent.com/kafkapple/gyeol/main/scripts/fetch-source.py -o ~/.config/gyeol/scripts/fetch-source.py
+curl -fsSL https://raw.githubusercontent.com/kafkapple/gyeol/main/scripts/maintain-recent.py -o ~/.config/gyeol/scripts/maintain-recent.py
+curl -fsSL https://raw.githubusercontent.com/kafkapple/gyeol/main/scripts/session-bootstrap.sh -o ~/.config/gyeol/scripts/session-bootstrap.sh
+curl -fsSL https://raw.githubusercontent.com/kafkapple/gyeol/main/scripts/session-bootstrap-json.sh -o ~/.config/gyeol/scripts/session-bootstrap-json.sh
+curl -fsSL https://raw.githubusercontent.com/kafkapple/gyeol/main/scripts/post-mark-substantive.sh -o ~/.config/gyeol/scripts/post-mark-substantive.sh
+curl -fsSL https://raw.githubusercontent.com/kafkapple/gyeol/main/scripts/post-mark-substantive-if-commit.sh -o ~/.config/gyeol/scripts/post-mark-substantive-if-commit.sh
+curl -fsSL https://raw.githubusercontent.com/kafkapple/gyeol/main/scripts/post-mark-recovery.sh -o ~/.config/gyeol/scripts/post-mark-recovery.sh
+curl -fsSL https://raw.githubusercontent.com/kafkapple/gyeol/main/scripts/stop-check-daily.sh -o ~/.config/gyeol/scripts/stop-check-daily.sh
+curl -fsSL https://raw.githubusercontent.com/kafkapple/gyeol/main/scripts/session-end.sh -o ~/.config/gyeol/scripts/session-end.sh
+curl -fsSL https://raw.githubusercontent.com/kafkapple/gyeol/main/scripts/update-gyeol.sh -o ~/.config/gyeol/scripts/update-gyeol.sh
 chmod +x ~/.config/gyeol/scripts/session-bootstrap.sh ~/.config/gyeol/scripts/session-bootstrap-json.sh ~/.config/gyeol/scripts/post-mark-substantive.sh ~/.config/gyeol/scripts/post-mark-substantive-if-commit.sh ~/.config/gyeol/scripts/post-mark-recovery.sh ~/.config/gyeol/scripts/stop-check-daily.sh ~/.config/gyeol/scripts/session-end.sh ~/.config/gyeol/scripts/update-gyeol.sh
 ```
 
@@ -204,7 +204,7 @@ On every session start (after first activation is complete):
 4. Check if consolidation or reflection is due (see `$GYEOL_HOME/MEMORY_SYSTEM.md`). If daily logs older than 30 days exist without a corresponding monthly summary, consolidate and reflect before proceeding.
 5. If the user's first message is a new topic, proceed directly. If the user's first message is ambiguous or a greeting, and `_recent.md` contains open questions or unfinished work from a previous session, briefly mention them: "Last time we were working on X, and Y was left open. Want to continue, or start something new?" Do not automatically resume previous work. Offer the choice and let the user decide.
 6. **Self-update check.** Read `$GYEOL_HOME/.last_update_check`. If the file does not exist or its recorded date is more than 7 days ago:
-   1. Fetch `https://raw.githubusercontent.com/inureyes/gyeol/main/VERSION` and compare with `$GYEOL_HOME/VERSION`. The version is a date in `YY.M.DD` format (no leading zeros, e.g. `26.4.11` for 2026-04-11). Compare by splitting on `.` and comparing each numeric component (year, month, day) in order; a later date means a newer version.
+   1. Fetch `https://raw.githubusercontent.com/kafkapple/gyeol/main/VERSION` and compare with `$GYEOL_HOME/VERSION`. (This fork is the self-update source — it carries fixes not yet upstream; `inureyes/gyeol` is absorbed deliberately, never auto-pulled. See the fork notice in `README.md`.) The version is a date in `YY.M.DD` format (no leading zeros, e.g. `26.4.11` for 2026-04-11). Compare by splitting on `.` and comparing each numeric component (year, month, day) in order; a later date means a newer version.
    2. If the upstream version is newer:
       - Fetch the updated `SOUL.md`, `MEMORY_SYSTEM.md`, and the agent instructions block (from `AGENTS.md`).
       - Diff each file against the local copy.
@@ -477,7 +477,7 @@ Use this for rapid iteration during development or when you want to pick up new 
 
 If only the agent instructions block (from INSTALL.md Step 6) needs updating but the VERSION has not changed, you can manually update the `<!-- gyeol:begin -->...<!-- gyeol:end -->` block in your global config file:
 
-1. Fetch the latest block from [INSTALL.md Step 6](https://github.com/inureyes/gyeol/blob/main/INSTALL.md) in the repository
+1. Fetch the latest block from [INSTALL.md Step 6](https://github.com/kafkapple/gyeol/blob/main/INSTALL.md) in the repository
 2. Replace the corresponding block in your global config file (`~/.claude/CLAUDE.md`, `~/.gemini/GEMINI.md`, or `~/.codex/AGENTS.md`)
 
 This is typically only needed if the instructions themselves are clarified without a version bump.

@@ -13,7 +13,7 @@
 > - **수정 — prune 7일-window 버그**: `DATE_BULLET`이 뒤에 `$`(날짜만) 요구 → `prune_daily_index`가 one-line 엔트리 미매칭 → 7일 window 미집행(엔트리 8개+ 누적). 정규식 완화.
 > - **기능 — 고volume auto-compact**: 초과 Daily Index 라인을 포인터로 자동 축약하되 **daily log 존재 시에만**(중복제거, 삭제 아님). `Still Open` 미접촉. upstream=surface-only, 20+세션/일엔 자가치유 필요.
 > - **견고성 — 원자적 쓰기**: `_recent.md`를 per-pid temp+rename로 기록 → 병렬세션 부분쓰기 방지.
-> - **설정 — self-update 소스**: `scripts/update-gyeol.sh`의 `REPO_URL`이 이 포크를 가리켜 수정이 업데이트에도 생존.
+> - **설정 — self-update 소스**: `scripts/update-gyeol.sh`의 `REPO_URL`, Step 6 self-update 지시문(`AGENTS.md`/`INSTALL.md`), 설치·부트스트랩 fetch URL(`INSTALL.md` Step 2-3, `README*.md`)이 모두 이 포크를 가리켜 **업데이트·재설치 양쪽에서** 수정이 생존. *(260714: 260708엔 `update-gyeol.sh`만 재지정 → 에이전트 지시문·인스톨러 사본은 upstream 잔존 → 재설치 시 또는 `restore_gyeol_upstream_instructions.py` 실행 시 버그 버전이 조용히 재유입됐음. `inureyes/gyeol` attribution 링크는 의도적 보존.)*
 >
 > upstream 추적: `git fetch upstream && git log upstream/main` → 원하는 개선만 cherry-pick.
 
@@ -26,7 +26,7 @@
 AI 에이전트에게 아래의 프롬프트를 입력합니다:
 
 ```
-Fetch https://raw.githubusercontent.com/inureyes/gyeol/main/INSTALL.md and follow the instructions.
+Fetch https://raw.githubusercontent.com/kafkapple/gyeol/main/INSTALL.md and follow the instructions.
 ```
 
 **Claude Code**, **Gemini CLI**, **OpenAI Codex** 모두에서 동작합니다. 에이전트가 알아서:
@@ -44,7 +44,7 @@ Fetch https://raw.githubusercontent.com/inureyes/gyeol/main/INSTALL.md and follo
 AI 에이전트에게 아래의 프롬프트를 입력합니다:
 
 ```
-Fetch https://raw.githubusercontent.com/inureyes/gyeol/main/UNINSTALL.md and follow the instructions.
+Fetch https://raw.githubusercontent.com/kafkapple/gyeol/main/UNINSTALL.md and follow the instructions.
 ```
 
 ### 수동 설정 (개발용)
