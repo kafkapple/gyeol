@@ -114,11 +114,15 @@ HEADER
 
     if [ -n "$last_date" ]; then
       today=$(date +%Y-%m-%d)
+      # NOTE: slice to date part — full timestamps like 2026-07-20T01:00:00+0900
+      # (the format _recent.md actually uses) make date.fromisoformat raise even
+      # on py3.13, which silently killed this whole staleness check (found by
+      # fixture test 260723: directive had never fired; enabled 669KB log growth).
       days_since=$(python3 -c "
 import sys
 from datetime import date
 try:
-    a = date.fromisoformat('$last_date')
+    a = date.fromisoformat('$last_date'[:10])
     b = date.fromisoformat('$today')
     print((b - a).days)
 except Exception:
