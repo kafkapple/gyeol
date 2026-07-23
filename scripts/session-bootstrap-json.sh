@@ -66,8 +66,15 @@ command. The task-framing override failure mode was documented in the
 
 HEADER
 
+  # SOUL_ESSENCE.md (distilled, ~1.2KB) replaces full SOUL.md (6.7KB) in the
+  # per-session injection (260723 session-load reduction). Full SOUL.md stays
+  # the SSOT — the essence file points back to it; fallback keeps old behavior
+  # on machines without the essence file.
+  SOUL_FILE="$GYEOL_HOME/SOUL.md"
+  [ -f "$GYEOL_HOME/SOUL_ESSENCE.md" ] && SOUL_FILE="$GYEOL_HOME/SOUL_ESSENCE.md"
+
   for f in \
-    "$GYEOL_HOME/SOUL.md" \
+    "$SOUL_FILE" \
     "$GYEOL_HOME/memory/IDENTITY.md" \
     "$GYEOL_HOME/memory/SELF.md" \
     "$GYEOL_HOME/memory/episodes/_recent.md"
@@ -126,7 +133,10 @@ except Exception:
         if [ -f "$SESSION_LOG" ] && [ -s "$SESSION_LOG" ]; then
           cnt=$(wc -l < "$SESSION_LOG" | tr -d ' ')
           printf 'session-end.sh recorded %s session(s) since the last log update:\n\n' "$cnt"
-          cat "$SESSION_LOG"
+          # Cap injection: an unbounded cat here once meant a 669KB context bomb
+          # (2026-07-23 audit). Recent entries are the useful anchors.
+          tail -n 40 "$SESSION_LOG"
+          [ "$cnt" -gt 40 ] && printf '[... %s earlier line(s) truncated — full file: %s]\n' "$((cnt - 40))" "$SESSION_LOG"
           printf '\n'
         fi
 
@@ -141,12 +151,11 @@ BEFORE responding to the user's first message:
    `$GYEOL_HOME/memory/episodes/daily/YYYY-MM-DD.md` for the dates you
    can reconstruct, even if a single line per day. Empty days can be
    marked as such.
-3. Update `_recent.md`'s `last_updated`, add Daily Index entries for the
-   recovered dates (one line per session/topic, pointing at the daily
-   log — `_recent.md` is a navigation index, not a content store), and
-   reconcile the Still Open section so unresolved items from the gap
-   days are surfaced or pruned. Drop any Daily Index entries now older
-   than 7 days.
+3. Update `_recent.md` only for recovered active/open context: set
+   `last_updated`, keep Daily Index entries as short pointers to daily
+   logs, and keep Still Open as a compact hot list of next-session
+   actionable items. If nothing remains active/open, skip `_recent.md`.
+   Drop any Daily Index entries now older than 7 days.
 4. After logs are written, truncate `$GYEOL_HOME/.session-log.jsonl` so
    it no longer flags the same gap on the next session.
 

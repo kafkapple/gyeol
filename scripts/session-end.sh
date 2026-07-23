@@ -50,7 +50,7 @@ fi
 
 ts=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
 
-jq -n \
+jq -cn \
   --arg end "$ts" \
   --arg cwd "${PWD:-unknown}" \
   --arg session_id "$SESSION_ID" \
@@ -59,5 +59,13 @@ jq -n \
   + (if $session_id != "" then {session_id:$session_id} else {} end)
   + (if $event_name != "" then {event:$event_name} else {} end)
 ' >> "$LOG" 2>/dev/null || true
+
+# Bounded evidence file: truncation is otherwise agent-driven (stale-directive
+# step 4) and never fires while _recent.md stays fresh — without this cap the
+# file grows without limit (observed 669KB/21k lines on 2026-07-23).
+if [ -f "$LOG" ] && [ "$(wc -l < "$LOG")" -gt 2000 ]; then
+  # $$-suffixed tmp: concurrent SessionEnd hooks must not share a tmp path
+  tail -n 500 "$LOG" > "$LOG.tmp.$$" 2>/dev/null && mv "$LOG.tmp.$$" "$LOG" 2>/dev/null || rm -f "$LOG.tmp.$$" 2>/dev/null || true
+fi
 
 exit 0
