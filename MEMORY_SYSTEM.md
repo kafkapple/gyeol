@@ -400,8 +400,11 @@ consolidated_on: "{YYYY-MM-DD}"
 
 Checked at session start, after reading `_recent.md`:
 
-- **Monthly**: if any daily logs are older than 30 days and no monthly summary exists for that month, first run `scripts/reconcile-sessions.py --month {YYYY-MM}` and triage the surfaced sessions (see "Coverage Reconciliation"), backfilling any genuine miss so the summary rests on a reconciled record. Then consolidate all that month's daily logs into `monthly/{YYYY-MM}.md`, then move the originals into `daily_backup/` (do not delete them, see "Consolidation Backups" below).
-- **Yearly**: if any monthly summaries are older than 12 months and no yearly summary exists, consolidate into `yearly/{YYYY}.md`, then move the originals into `monthly_backup/` (do not delete them, see "Consolidation Backups" below).
+- **Monthly**: if a month is *fully closed* — every one of its daily logs is older than 30 days — and no monthly summary exists for it, first run `scripts/reconcile-sessions.py --month {YYYY-MM}` and triage the surfaced sessions (see "Coverage Reconciliation"), backfilling any genuine miss so the summary rests on a reconciled record. Then consolidate all that month's daily logs into `monthly/{YYYY-MM}.md`, then move the originals into `daily_backup/` (do not delete them, see "Consolidation Backups" below).
+- **Yearly**: if a year is fully closed — every one of its monthly summaries is older than 12 months — and no yearly summary exists, consolidate into `yearly/{YYYY}.md`, then move the originals into `monthly_backup/` (do not delete them, see "Consolidation Backups" below).
+- **Archive-only**: if any log in `daily/` is over 30 days old *and* its month already has a summary, move just that file to `daily_backup/`. No consolidation, no summary rewrite. This is the path that keeps the working window bounded when the summary already exists — without it, logs restored after a premature consolidation stay in `daily/` forever, because the Monthly check above is gated on the summary being absent.
+
+**Never consolidate the current month, and never a month whose newest daily log is under 30 days old.** Compare dates, not filename strings: derive each log's date from its `{YYYY-MM-DD}` name and require `newest_log_date <= today - 30 days` before the month is eligible. One old log does not make a month eligible — the *newest* one decides. Violating this collapses the `daily/` 30-day working window into whatever is left after the move, and the monthly summary retains under 1% of the source bytes, so the detail is only recoverable from `daily_backup/`.
 
 Consolidation is done by me, not by a script. It requires judgment — what mattered, what was noise, what the arc was. Mechanical concatenation is not consolidation.
 

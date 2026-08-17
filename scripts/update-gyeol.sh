@@ -258,8 +258,13 @@ case "$response" in
     mkdir -p "$GYEOL_HOME/scripts"
     for script in $SCRIPTS; do
       [ -f "$TMPDIR/scripts/$script" ] || continue
-      cp "$TMPDIR/scripts/$script" "$GYEOL_HOME/scripts/$script"
-      chmod +x "$GYEOL_HOME/scripts/$script"
+      # Stage under $GYEOL_HOME so the final mv is a same-filesystem atomic rename,
+      # not a cp over the live path — same hazard reconcile_scripts() above guards
+      # against: update-gyeol.sh can be updating itself here.
+      stage=$(mktemp "$GYEOL_HOME/scripts/.update.XXXXXX")
+      cp "$TMPDIR/scripts/$script" "$stage"
+      chmod +x "$stage"
+      mv "$stage" "$GYEOL_HOME/scripts/$script"
       echo "✓ Updated scripts/$script"
     done
 

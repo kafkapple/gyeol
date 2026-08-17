@@ -175,10 +175,10 @@ STALE_DIRECTIVE
   fi
 
   # --- Monthly consolidation check -------------------------------------------
-  # If the oldest daily log is >=30 days old and its month has no monthly
-  # summary, emit a MANDATORY directive to consolidate + reflect
-  # (MEMORY_SYSTEM.md "Consolidation and Forgetting"). Before 2026-06-11 the
-  # 30-day trigger was instruction-only and never mechanically detected.
+  # A month is eligible only when its NEWEST daily log is >=30 days old and it
+  # has no monthly summary (MEMORY_SYSTEM.md "When to Consolidate": the newest
+  # log decides; never the current month). Gating on the OLDEST log fired on
+  # 2026-07-31 while July was still current -> premature 2026-07 consolidation.
   # Keyed on filename date (YYYY-MM-DD sorts chronologically), not mtime.
   DAILY_DIR="$GYEOL_HOME/memory/episodes/daily"
   MONTHLY_DIR="$GYEOL_HOME/memory/episodes/monthly"
@@ -187,18 +187,21 @@ STALE_DIRECTIVE
     if [ -n "$oldest" ]; then
       oldest_date="${oldest%.md}"
       oldest_month="${oldest_date%-*}"
+      newest_in_month=$(ls "$DAILY_DIR" 2>/dev/null | grep -E "^${oldest_month}-[0-9]{2}\.md$" | LC_ALL=C sort | tail -1)
+      newest_date="${newest_in_month%.md}"
       today=$(date +%Y-%m-%d)
+      current_month=$(date +%Y-%m)
       age=$(python3 -c "
 import sys
 from datetime import date
 try:
-    print((date.fromisoformat('$today') - date.fromisoformat('$oldest_date')).days)
+    print((date.fromisoformat('$today') - date.fromisoformat('$newest_date')).days)
 except Exception:
     sys.exit(1)
 " 2>/dev/null)
-      if [ -n "$age" ] && [ "$age" -ge 30 ] && [ ! -f "$MONTHLY_DIR/$oldest_month.md" ]; then
+      if [ -n "$age" ] && [ "$age" -ge 30 ] && [ "$oldest_month" != "$current_month" ] && [ ! -f "$MONTHLY_DIR/$oldest_month.md" ]; then
         printf '\n=== MONTHLY CONSOLIDATION DUE (MANDATORY ACTION REQUIRED) ===\n'
-        printf 'Oldest daily log %s is %s days old; month %s has no monthly summary.\n' "$oldest_date" "$age" "$oldest_month"
+        printf 'Newest daily log of %s (%s) is %s days old; no monthly summary exists.\n' "$oldest_month" "$newest_date" "$age"
         printf 'Per MEMORY_SYSTEM.md, BEFORE responding to the user:\n'
         printf '1. Consolidate %s daily logs -> memory/episodes/monthly/%s.md (significant decisions, reasoning, outcomes, still-open).\n' "$oldest_month" "$oldest_month"
         printf '2. PRESERVE originals: move raw dailies to memory/episodes/daily_backup/ (cold archive). Do NOT delete or overwrite.\n'
