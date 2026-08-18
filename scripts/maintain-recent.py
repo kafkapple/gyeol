@@ -184,14 +184,23 @@ def weeks_with_logs(episodes_dir: Path) -> dict:
 
 
 def weeks_with_checkpoints(weekly_dir: Path) -> set:
-    """ISO (year, week) taken from the `{YYYY-Www}` filename prefix."""
+    """ISO (year, week) from the `{YYYY-Www}` filename prefix, both namespaces.
+
+    `weekly/` holds contemporaneous checkpoints; `weekly/retrospective/` holds ones
+    reconstructed after the fact. They are separate directories rather than one
+    directory with a `status:` field because a field is a soft control — anything
+    that globs the checkpoints has to remember to filter, and eventually one
+    consumer will not. Coverage counts both; anything that needs contemporaneous
+    evidence reads `weekly/*.md` only and gets that guarantee from the path.
+    """
     found = set()
-    if not weekly_dir.is_dir():
-        return found
-    for f in weekly_dir.glob("*.md"):
-        m = re.match(r"(\d{4})-W(\d{2})", f.name)
-        if m:
-            found.add((int(m.group(1)), int(m.group(2))))
+    for d in (weekly_dir, weekly_dir / "retrospective"):
+        if not d.is_dir():
+            continue
+        for f in d.glob("*.md"):
+            m = re.match(r"(\d{4})-W(\d{2})", f.name)
+            if m:
+                found.add((int(m.group(1)), int(m.group(2))))
     return found
 
 
@@ -210,9 +219,20 @@ def registered_gaps(weekly_dir: Path) -> set:
         body = reg.read_text(encoding="utf-8")
     except Exception:
         return set()
+    # Only these sections suppress a week, and the list is explicit on purpose.
+    # Scanning the whole file instead swallowed `## Backfilled` and `## Existing
+    # legacy checkpoints`, so a week could be silenced by being mentioned anywhere
+    # at all — the unanchored-match failure that makes a guard read as passing
+    # while it is blind. Adding a section here is a deliberate act, not a default.
+    suppressing = ("Missing", "Not backfillable")
     out = set()
-    for m in re.finditer(r"^-\s*(\d{4})-W(\d{2})\b", body, re.MULTILINE):
-        out.add((int(m.group(1)), int(m.group(2))))
+    for head in suppressing:
+        section = re.search(rf"^##\s+{re.escape(head)}\b.*?$(.*?)(?=^##\s|\Z)", body,
+                            re.MULTILINE | re.DOTALL)
+        if not section:
+            continue
+        for m in re.finditer(r"^-\s*(\d{4})-W(\d{2})\b", section.group(1), re.MULTILINE):
+            out.add((int(m.group(1)), int(m.group(2))))
     return out
 
 

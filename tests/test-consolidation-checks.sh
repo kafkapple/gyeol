@@ -157,6 +157,30 @@ chk "W27 도 등록 후 0주" 0 "$(wk)"
 : > "$H/memory/episodes/daily/2026-07-07.md"   # W28, 미등록
 chk "미등록 주는 여전히 감지" 1 "$(wk)"
 
+
+echo "--- R4-R7: retrospective 네임스페이스 + 절 앵커 ---"
+rm -f "$H/memory/episodes/daily/"*.md "$H/memory/episodes/weekly/"*.md \
+      "$H/memory/episodes/monthly/"*.md "$H/memory/episodes/daily_backup/"*.md
+rm -rf "$H/memory/episodes/weekly/retrospective"
+: > "$H/memory/episodes/daily/2026-06-23.md"   # W26
+: > "$H/memory/episodes/daily/2026-06-30.md"   # W27
+chk "기준: 2주 구멍" 2 "$(wk)"
+
+# retrospective/ 에 놓인 체크포인트도 커버리지로 계수돼야 함
+mkdir -p "$H/memory/episodes/weekly/retrospective"
+: > "$H/memory/episodes/weekly/retrospective/2026-W26_x.md"
+chk "retrospective 도 계수" 1 "$(wk)"
+
+# Backfilled 절의 언급은 억제하면 안 됨(과잉매칭 회귀)
+printf -- '---\nkind: gap-register\n---\n\n## Backfilled\n\n- 2026-W27 — done\n' \
+  > "$H/memory/episodes/weekly/_legacy_gaps.md"
+chk "Backfilled 절은 억제 안 함" 1 "$(wk)"
+
+# Not backfillable 절은 억제해야 함
+printf -- '\n## Not backfillable\n\n- 2026-W27 — no source\n' \
+  >> "$H/memory/episodes/weekly/_legacy_gaps.md"
+chk "Not backfillable 절은 억제" 0 "$(wk)"
+
 echo
 echo "TOTAL: $pass passed, $fail failed"
 [ "$fail" = 0 ] && echo "RESULT: PASS" || echo "RESULT: FAIL"
