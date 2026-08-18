@@ -195,14 +195,37 @@ def weeks_with_checkpoints(weekly_dir: Path) -> set:
     return found
 
 
+def registered_gaps(weekly_dir: Path) -> set:
+    """Weeks the gap register declares legacy — surfaced once, then not nagged.
+
+    Without this the enumerator reports the same historical holes every session
+    forever. A gap that is a deliberate decision is not a finding; repeating it
+    trains the reader to skim past the directive, which is how the newest-only
+    guard's silence went unnoticed in the first place.
+    """
+    reg = weekly_dir / "_legacy_gaps.md"
+    if not reg.is_file():
+        return set()
+    try:
+        body = reg.read_text(encoding="utf-8")
+    except Exception:
+        return set()
+    out = set()
+    for m in re.finditer(r"^-\s*(\d{4})-W(\d{2})\b", body, re.MULTILINE):
+        out.add((int(m.group(1)), int(m.group(2))))
+    return out
+
+
 def missing_week_checkpoints(episodes_dir: Path, today: date) -> list:
     """Weeks that have daily logs but no checkpoint, excluding the current week.
 
     Newest-only staleness cannot see a hole behind a recent checkpoint: with W33
     written, W19-W29 read as "up to date" and stayed invisible (10 weeks, measured
     2026-08-18). Gaps are found by enumeration, never by looking at one end.
+    Weeks listed in `weekly/_legacy_gaps.md` are excluded — see registered_gaps().
     """
-    have = weeks_with_checkpoints(episodes_dir / "weekly")
+    weekly_dir = episodes_dir / "weekly"
+    have = weeks_with_checkpoints(weekly_dir) | registered_gaps(weekly_dir)
     cur = today.isocalendar()
     out = []
     for key, days in sorted(weeks_with_logs(episodes_dir).items()):

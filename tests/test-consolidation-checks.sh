@@ -138,6 +138,25 @@ chk "step 0 WEEKLY FIRST 포함" 1 "$(cnt 'WEEKLY FIRST')"
 chk "승인 요구 문구 포함" 1 "$(cnt 'get approval first')"
 chk "해당 월 이름이 step 0 에 박힘" 1 "$(run | grep -c 'lists any week inside 2026-06')"
 
+
+echo "--- R1-R3: 레거시 gap 레지스터 ---"
+rm -f "$H/memory/episodes/daily/"*.md "$H/memory/episodes/weekly/"*.md \
+      "$H/memory/episodes/monthly/"*.md "$H/memory/episodes/daily_backup/"*.md
+: > "$H/memory/episodes/daily/2026-06-23.md"   # W26
+: > "$H/memory/episodes/daily/2026-06-30.md"   # W27
+chk "레지스터 없으면 2주 감지" 2 "$(wk)"
+
+printf -- '---\nkind: gap-register\n---\n\n## Missing\n\n- 2026-W26 — x\n' \
+  > "$H/memory/episodes/weekly/_legacy_gaps.md"
+chk "W26 등록 후 1주" 1 "$(wk)"
+
+printf -- '- 2026-W27 — x\n' >> "$H/memory/episodes/weekly/_legacy_gaps.md"
+chk "W27 도 등록 후 0주" 0 "$(wk)"
+
+# 레지스터 파일 자체가 체크포인트로 오인되면 안 됨(_ 로 시작, YYYY-Www 아님)
+: > "$H/memory/episodes/daily/2026-07-07.md"   # W28, 미등록
+chk "미등록 주는 여전히 감지" 1 "$(wk)"
+
 echo
 echo "TOTAL: $pass passed, $fail failed"
 [ "$fail" = 0 ] && echo "RESULT: PASS" || echo "RESULT: FAIL"
