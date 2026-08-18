@@ -208,6 +208,20 @@ except Exception:
         printf '3. Write monthly reflection -> memory/reflections/monthly/%s.md (what it meant, not a repeat of the summary).\n' "$oldest_month"
         printf '4. Update SELF.md only if something significant shifted.\n'
         printf 'Cold-archived dailies stay OUT of the hot retrieval path (context-rot avoidance).\n'
+      elif [ -n "$age" ] && [ "$age" -ge 30 ] && [ "$oldest_month" != "$current_month" ]; then
+        # Archive-only (MEMORY_SYSTEM.md "When to Consolidate", third bullet): the
+        # month already HAS a summary but logs for it are still sitting in daily/.
+        # The Monthly branch above can never fire for such a month — it is gated on
+        # the summary being absent — so without this branch the 30-day working
+        # window stays polluted with no signal at all. Reachable after a corrected
+        # premature consolidation restores logs, or a partial daily_backup/ move.
+        strays=$(ls "$DAILY_DIR" 2>/dev/null | grep -E "^${oldest_month}-[0-9]{2}\.md$" | tr '\n' ' ')
+        printf '\n=== ARCHIVE-ONLY DUE (MANDATORY ACTION REQUIRED) ===\n'
+        printf 'Month %s already has monthly/%s.md, but its logs are still in daily/ (newest %s, %s days old).\n' "$oldest_month" "$oldest_month" "$newest_date" "$age"
+        printf 'Per MEMORY_SYSTEM.md, BEFORE responding to the user:\n'
+        printf '1. Move these to memory/episodes/daily_backup/ — no consolidation, no summary rewrite: %s\n' "$strays"
+        printf '2. Do NOT rewrite %s.md. A month summary is written once.\n' "$oldest_month"
+        printf 'This only retires logs from the hot window; the summary already exists.\n'
       fi
     fi
   fi

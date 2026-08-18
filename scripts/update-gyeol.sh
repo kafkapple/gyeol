@@ -43,6 +43,18 @@ session-end.sh
 stop-check-daily.sh
 update-gyeol.sh"
 
+# How many `.local-*` snapshots to keep per backed-up file. The backup guard in
+# the apply step below runs on every update where the local copy diverged, so
+# without a bound it accumulates one file per update forever.
+BACKUP_KEEP=3
+
+# $1 = the live path whose `.local-*` snapshots should be trimmed to $BACKUP_KEEP.
+prune_backups() {
+  ls -t "$1".local-* 2>/dev/null | tail -n +$((BACKUP_KEEP + 1)) | while IFS= read -r stale; do
+    rm -f "$stale"
+  done
+}
+
 # Ensure gyeol is installed
 [ -f "$GYEOL_HOME/SOUL.md" ] || {
   echo "gyeol is not installed at $GYEOL_HOME"
@@ -261,6 +273,7 @@ case "$response" in
         backup="$GYEOL_HOME/$file.local-$(date +%Y%m%d-%H%M%S)"
         cp "$GYEOL_HOME/$file" "$backup"
         echo "↩ Local copy saved to $(basename "$backup")"
+        prune_backups "$GYEOL_HOME/$file"
       fi
       cp "$TMPDIR/$file" "$GYEOL_HOME/$file"
       echo "✓ Updated $file"
@@ -277,6 +290,7 @@ case "$response" in
         sbackup="$GYEOL_HOME/scripts/$script.local-$(date +%Y%m%d-%H%M%S)"
         cp "$GYEOL_HOME/scripts/$script" "$sbackup"
         echo "↩ Local copy saved to scripts/$(basename "$sbackup")"
+        prune_backups "$GYEOL_HOME/scripts/$script"
       fi
       # Stage under $GYEOL_HOME so the final mv is a same-filesystem atomic rename,
       # not a cp over the live path — same hazard reconcile_scripts() above guards
