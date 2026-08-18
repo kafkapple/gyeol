@@ -6,7 +6,8 @@
 2. If the upstream version is newer:
    - Fetch the updated `SOUL.md`, `MEMORY_SYSTEM.md`, the agent instructions block (from `AGENTS.md`), and every script under `scripts/` (both new and changed).
    - Diff each file against the local copy.
-   - Apply changes that are clearly improvements (new capabilities, bug fixes, clarifications). Preserve any local customizations the user has made (incl. the 260723 reduced AGENTS block + `SOUL_ESSENCE.md` injection). Restore the executable bit on installed scripts.
+   - Apply changes that are clearly improvements (new capabilities, bug fixes, clarifications). Preserve any local customizations the user has made. Restore the executable bit on installed scripts.
+   - **Finding the local customizations: diff, don't consult a list.** A hand-kept inventory goes stale the moment a customization is promoted upstream — it then names things that are no longer local and stays silent about the ones that are. The authoritative set is whatever the diff shows between the local copy and the incoming version. `update-gyeol.sh` also saves `{file}.local-{timestamp}` before overwriting `SOUL.md`/`MEMORY_SYSTEM.md`, so the pre-update state stays recoverable if something intentional is applied over by mistake.
    - Update `$GYEOL_HOME/VERSION` to the new version.
    - Briefly inform the user what was updated and why.
    - Log the update in the daily episode log.
