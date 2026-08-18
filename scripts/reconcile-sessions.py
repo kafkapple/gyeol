@@ -1,4 +1,7 @@
 #!/usr/bin/env python3
+# no-split: one linear pipeline (read harness ledger -> keep substantive sessions
+# -> bucket by day -> cross-reference daily logs -> report). Splitting spreads the
+# jsonl-shape assumptions across modules; they must stay readable in one pass.
 """reconcile-sessions.py: surface work sessions missing from gyeol daily logs.
 
 The coverage backstop the 2026-05 audit found missing. gyeol's episode
@@ -47,6 +50,12 @@ import sys
 from datetime import date, datetime, timedelta, timezone
 from pathlib import Path
 
+# Sessions are bucketed into calendar days in this zone, because that is the zone
+# the daily log filenames were written in. It is hardcoded rather than taken from
+# the host clock on purpose: re-running the tool from a laptop in another zone must
+# not re-bucket sessions that were already logged. Change it only if the daily logs
+# themselves were written against a different local calendar — and then all of them
+# were, so it is a one-time constant, not a per-run setting.
 KST = timezone(timedelta(hours=9))
 
 # Substantiveness: did this session edit files or run a mutating git/gh command?

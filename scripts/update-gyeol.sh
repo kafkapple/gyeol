@@ -36,6 +36,7 @@ maintain-recent.py
 post-mark-recovery.sh
 post-mark-substantive-if-commit.sh
 post-mark-substantive.sh
+reconcile-sessions.py
 session-bootstrap-json.sh
 session-bootstrap.sh
 session-end.sh
@@ -268,6 +269,15 @@ case "$response" in
     mkdir -p "$GYEOL_HOME/scripts"
     for script in $SCRIPTS; do
       [ -f "$TMPDIR/scripts/$script" ] || continue
+      # Same backup rule as $FILES above. Scripts are the likelier place for a
+      # local fix to exist that upstream has not absorbed yet, and the summary
+      # printed above lists changed scripts by name only — never a diff — so
+      # this apply is approved with even less visibility than the docs one.
+      if [ -f "$GYEOL_HOME/scripts/$script" ] && ! diff -q "$GYEOL_HOME/scripts/$script" "$TMPDIR/scripts/$script" > /dev/null 2>&1; then
+        sbackup="$GYEOL_HOME/scripts/$script.local-$(date +%Y%m%d-%H%M%S)"
+        cp "$GYEOL_HOME/scripts/$script" "$sbackup"
+        echo "↩ Local copy saved to scripts/$(basename "$sbackup")"
+      fi
       # Stage under $GYEOL_HOME so the final mv is a same-filesystem atomic rename,
       # not a cp over the live path — same hazard reconcile_scripts() above guards
       # against: update-gyeol.sh can be updating itself here.
