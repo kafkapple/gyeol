@@ -270,7 +270,7 @@ case "$response" in
       # the file is approved without ever being seen. The overwrite stays —
       # this only makes it recoverable instead of terminal.
       if [ -f "$GYEOL_HOME/$file" ] && ! diff -q "$GYEOL_HOME/$file" "$TMPDIR/$file" > /dev/null 2>&1; then
-        backup="$GYEOL_HOME/$file.local-$(date +%Y%m%d-%H%M%S)"
+        backup="$GYEOL_HOME/$file.local-$(date +%Y%m%d-%H%M%S)-$$"
         cp "$GYEOL_HOME/$file" "$backup"
         echo "↩ Local copy saved to $(basename "$backup")"
         prune_backups "$GYEOL_HOME/$file"
@@ -287,7 +287,7 @@ case "$response" in
       # printed above lists changed scripts by name only — never a diff — so
       # this apply is approved with even less visibility than the docs one.
       if [ -f "$GYEOL_HOME/scripts/$script" ] && ! diff -q "$GYEOL_HOME/scripts/$script" "$TMPDIR/scripts/$script" > /dev/null 2>&1; then
-        sbackup="$GYEOL_HOME/scripts/$script.local-$(date +%Y%m%d-%H%M%S)"
+        sbackup="$GYEOL_HOME/scripts/$script.local-$(date +%Y%m%d-%H%M%S)-$$"
         cp "$GYEOL_HOME/scripts/$script" "$sbackup"
         echo "↩ Local copy saved to scripts/$(basename "$sbackup")"
         prune_backups "$GYEOL_HOME/scripts/$script"
