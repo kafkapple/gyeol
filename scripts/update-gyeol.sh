@@ -251,6 +251,16 @@ case "$response" in
     echo ""
     echo "Applying updates..."
     for file in $FILES; do
+      # Back up the local copy before overwriting. These files carry local
+      # customizations (UPDATE_PROCEDURE.md step 2 enumerates them) and the
+      # diff shown above is capped at 30 lines, so a divergence further down
+      # the file is approved without ever being seen. The overwrite stays —
+      # this only makes it recoverable instead of terminal.
+      if [ -f "$GYEOL_HOME/$file" ] && ! diff -q "$GYEOL_HOME/$file" "$TMPDIR/$file" > /dev/null 2>&1; then
+        backup="$GYEOL_HOME/$file.local-$(date +%Y%m%d-%H%M%S)"
+        cp "$GYEOL_HOME/$file" "$backup"
+        echo "↩ Local copy saved to $(basename "$backup")"
+      fi
       cp "$TMPDIR/$file" "$GYEOL_HOME/$file"
       echo "✓ Updated $file"
     done
