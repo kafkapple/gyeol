@@ -140,12 +140,11 @@ BEFORE responding to the user's first message:
    `$GYEOL_HOME/memory/episodes/daily/YYYY-MM-DD.md` for the dates you
    can reconstruct, even if a single line per day. Empty days can be
    marked as such.
-3. Update `_recent.md`'s `last_updated`, add Daily Index entries for the
-   recovered dates (one line per session/topic, pointing at the daily
-   log — `_recent.md` is a navigation index, not a content store), and
-   reconcile the Still Open section so unresolved items from the gap
-   days are surfaced or pruned. Drop any Daily Index entries now older
-   than 7 days.
+3. Update `_recent.md` only for recovered active/open context: set
+   `last_updated`, keep Daily Index entries as short pointers to daily
+   logs, and keep Still Open as a compact hot list of next-session
+   actionable items. If nothing remains active/open, skip `_recent.md`.
+   Drop any Daily Index entries now older than 7 days.
 4. After logs are written, truncate `$GYEOL_HOME/.session-log.jsonl` so
    it no longer flags the same gap on the next session.
 
