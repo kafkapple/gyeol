@@ -181,6 +181,23 @@ printf -- '\n## Not backfillable\n\n- 2026-W27 — no source\n' \
   >> "$H/memory/episodes/weekly/_legacy_gaps.md"
 chk "Not backfillable 절은 억제" 0 "$(wk)"
 
+
+echo "--- R8-R9: 레지스터 헤딩 정확 일치 ---"
+rm -f "$H/memory/episodes/daily/"*.md "$H/memory/episodes/weekly/"*.md \
+      "$H/memory/episodes/daily_backup/"*.md
+rm -rf "$H/memory/episodes/weekly/retrospective"
+: > "$H/memory/episodes/daily/2026-06-23.md"   # W26
+
+# 장식된 헤딩은 억제하면 안 됨 (주의를 끌려고 쓴 절이 침묵시키는 사고 방지)
+printf -- '---\nkind: gap-register\n---\n\n## Missing (historical)\n\n- 2026-W26 — x\n' \
+  > "$H/memory/episodes/weekly/_legacy_gaps.md"
+chk "접두만 맞는 헤딩은 억제 안 함" 1 "$(wk)"
+
+# 정확히 일치하는 헤딩만 억제
+printf -- '---\nkind: gap-register\n---\n\n## Missing\n\n- 2026-W26 — x\n' \
+  > "$H/memory/episodes/weekly/_legacy_gaps.md"
+chk "정확 일치는 억제" 0 "$(wk)"
+
 echo
 echo "TOTAL: $pass passed, $fail failed"
 [ "$fail" = 0 ] && echo "RESULT: PASS" || echo "RESULT: FAIL"

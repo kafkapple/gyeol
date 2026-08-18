@@ -1,4 +1,8 @@
 #!/usr/bin/env python3
+# no-split: one bootstrap-time maintenance pass over `_recent.md` plus the weekly
+# coverage check it emits alongside. The parts share the same file conventions and
+# directive format; splitting them puts the parsing rules in one module and the
+# reporting that depends on them in another.
 """Maintain `_recent.md`: prune stale Daily Index entries, flag stale Weekly Checkpoint, guard against bloat.
 
 Run from session bootstrap. Idempotent and best-effort:
@@ -227,7 +231,10 @@ def registered_gaps(weekly_dir: Path) -> set:
     suppressing = ("Missing", "Not backfillable")
     out = set()
     for head in suppressing:
-        section = re.search(rf"^##\s+{re.escape(head)}\b.*?$(.*?)(?=^##\s|\Z)", body,
+        # The heading must match exactly to end-of-line. `\b.*?$` also accepted
+        # `## Missing (historical)` and `## Missing — do NOT suppress these`,
+        # so a section written to draw attention would have silenced it instead.
+        section = re.search(rf"^##\s+{re.escape(head)}\s*$(.*?)(?=^##\s|\Z)", body,
                             re.MULTILINE | re.DOTALL)
         if not section:
             continue
