@@ -215,6 +215,7 @@ except Exception:
         printf '\n=== MONTHLY CONSOLIDATION DUE (MANDATORY ACTION REQUIRED) ===\n'
         printf 'Newest daily log of %s (%s) is %s days old; no monthly summary exists.\n' "$month" "$newest_date" "$age"
         printf 'Per MEMORY_SYSTEM.md, BEFORE responding to the user:\n'
+        printf '0. WEEKLY FIRST. If the Weekly Checkpoint gaps directive in this bootstrap lists any week inside %s, write those checkpoints before consolidating -- they are the input that makes the reflection a synthesis instead of recall. Present the week list and get approval first; a batch is several sessions of reading, not a side task. If they cannot be reconstructed, say so in the reflection and name what it was built from.\n' "$month"
         printf '1. Consolidate %s daily logs -> memory/episodes/monthly/%s.md (significant decisions, reasoning, outcomes, still-open).\n' "$month" "$month"
         printf '2. PRESERVE originals: move raw dailies to memory/episodes/daily_backup/ (cold archive). Do NOT delete or overwrite.\n'
         printf '3. Write monthly reflection -> memory/reflections/monthly/%s.md (what it meant, not a repeat of the summary).\n' "$month"

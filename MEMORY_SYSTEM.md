@@ -133,12 +133,20 @@ reflected_on: "{YYYY-MM-DD}"
 ### The Reflection Cycle
 
 ```
-Episodes (raw) → consolidation → Monthly summary
-               → monthly reflection → yearly reflection
-               → crystallization → SELF.md
+Episodes (raw) → weekly checkpoint → consolidation → Monthly summary
+                                   → monthly reflection → yearly reflection
+                                   → crystallization → SELF.md
 ```
 
-Monthly reflection examines monthly consolidation. Yearly reflection examines the full arc of monthly reflections. After yearly reflection, update SELF.md. Monthly reflections may also trigger SELF.md updates when something significant shifts — not as routine.
+Monthly reflection examines monthly consolidation *and the weekly checkpoints of that month*. Yearly reflection examines the full arc of monthly reflections. After yearly reflection, update SELF.md. Monthly reflections may also trigger SELF.md updates when something significant shifts — not as routine.
+
+**Weekly is a load-bearing rung, not decoration.** The checkpoints are what turn monthly reflection into synthesis rather than recall: without them the only inputs are the month's raw daily logs, which do not fit in one context (measured 2026-08-18: 38 files, 1.09 MB for a 30-day window), so what actually gets reflected on is whatever the writing session happens to remember. That is the salience bias this whole system exists to correct.
+
+**Fallback when the weekly checkpoints are missing** (this is the normal case for any month before the guard existed — verified: the 2026-05/06/07 reflections were written with 0/1/2 checkpoints and cite none):
+
+1. Write the missing checkpoints for that month *first*, from that week's daily logs. Present the list of weeks and get approval before doing a batch — it is several sessions of reading, not a side task.
+2. If they genuinely cannot be reconstructed (logs consolidated away and unavailable), say so **in the reflection itself** and name what it was built from instead. A reflection that silently rests on recall is worse than one that admits its source.
+3. Never treat "the monthly summary exists" as sufficient input. The summary retains well under 1% of the source bytes; it is an index, not evidence.
 
 ### What Reflection Is Not
 

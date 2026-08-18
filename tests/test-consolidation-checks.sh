@@ -126,6 +126,18 @@ rm -f "$H/memory/episodes/daily_backup/"*.md
 : > "$H/memory/episodes/daily/$(date +%Y-%m-%d).md"
 chk "이번 주 제외" 0 "$(wk)"
 
+
+echo "--- S1: MONTHLY 지시가 weekly 선행 게이트를 포함하나 ---"
+rm -f "$H/memory/episodes/daily/"*.md "$H/memory/episodes/monthly/"*.md \
+      "$H/memory/episodes/yearly/"*.md "$H/memory/episodes/weekly/"*.md \
+      "$H/memory/episodes/daily_backup/"*.md
+: > "$H/memory/episodes/daily/2026-06-04.md"
+: > "$H/memory/episodes/daily/2026-06-28.md"
+chk "MONTHLY 발행" 1 "$(cnt 'Newest daily log of 2026-06')"
+chk "step 0 WEEKLY FIRST 포함" 1 "$(cnt 'WEEKLY FIRST')"
+chk "승인 요구 문구 포함" 1 "$(cnt 'get approval first')"
+chk "해당 월 이름이 step 0 에 박힘" 1 "$(run | grep -c 'lists any week inside 2026-06')"
+
 echo
 echo "TOTAL: $pass passed, $fail failed"
 [ "$fail" = 0 ] && echo "RESULT: PASS" || echo "RESULT: FAIL"
