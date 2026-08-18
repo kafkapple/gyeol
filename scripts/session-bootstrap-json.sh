@@ -239,6 +239,68 @@ except Exception:
     done
   fi
 
+  # --- Yearly / Archive-only(year) consolidation check --------------------------
+  # Mirror of the month loop above, one level up: monthly summaries are to a year
+  # what daily logs are to a month. Same three rules, same failure modes avoided —
+  # evaluate EVERY distinct year present in monthly/ (a stuck year must not own the
+  # check slot), never the current year, and treat "summary already exists" as an
+  # archive-only case rather than silence.
+  #
+  # Eligibility (MEMORY_SYSTEM.md "When to Consolidate"): a year is fully closed
+  # when its NEWEST monthly summary is >=12 months behind the current month. That
+  # is integer month arithmetic (y*12+m), not day counting — "12 months" straddles
+  # leap years and unequal month lengths, and a day threshold would drift.
+  #
+  # This cannot fire on a fresh install for a long time (a 2026 install reaches
+  # eligibility for 2026 only in 2027-12). It is implemented anyway so the doc and
+  # the code stay in step; the gap between them is what hid the month-level
+  # Archive-only case until an audit found it.
+  MONTHLY_DIR="$GYEOL_HOME/memory/episodes/monthly"
+  YEARLY_DIR="$GYEOL_HOME/memory/episodes/yearly"
+  if [ -d "$MONTHLY_DIR" ]; then
+    current_year=$(date +%Y)
+    cur_ym=$(date +%Y-%m)
+    for year in $(ls "$MONTHLY_DIR" 2>/dev/null | grep -E '^[0-9]{4}-[0-9]{2}\.md$' | cut -c1-4 | LC_ALL=C sort -u); do
+      [ "$year" = "$current_year" ] && continue
+      newest_month_file=$(ls "$MONTHLY_DIR" 2>/dev/null | grep -E "^${year}-[0-9]{2}\.md$" | LC_ALL=C sort | tail -1)
+      newest_ym="${newest_month_file%.md}"
+      months_since=$(python3 -c "
+import sys
+try:
+    cy, cm = [int(x) for x in '$cur_ym'.split('-')]
+    ny, nm = [int(x) for x in '$newest_ym'.split('-')]
+    print((cy * 12 + cm) - (ny * 12 + nm))
+except Exception:
+    sys.exit(1)
+" 2>/dev/null)
+      [ -n "$months_since" ] && [ "$months_since" -ge 12 ] || continue
+      if [ ! -f "$YEARLY_DIR/$year.md" ]; then
+        printf '\n=== YEARLY CONSOLIDATION DUE (MANDATORY ACTION REQUIRED) ===\n'
+        printf 'Newest monthly summary of %s (%s) is %s months old; no yearly summary exists.\n' "$year" "$newest_ym" "$months_since"
+        printf 'Per MEMORY_SYSTEM.md, BEFORE responding to the user:\n'
+        printf '1. Consolidate %s monthly summaries -> memory/episodes/yearly/%s.md (direction-changing decisions, narrative arc, milestones).\n' "$year" "$year"
+        printf '2. PRESERVE originals: move them to memory/episodes/monthly_backup/ (cold archive). Do NOT delete or overwrite.\n'
+        printf '3. Write yearly reflection -> memory/reflections/yearly/%s.md (the arc, how I changed, deepest lessons, unresolved tensions).\n' "$year"
+        printf '4. Update SELF.md after the yearly reflection.\n'
+        printf 'Yearly is distilled, not concatenated — it examines the monthly reflections, not just the summaries.\n'
+      else
+        # Archive-only at year level: yearly/{YYYY}.md exists but that year's monthly
+        # summaries are still in monthly/. The branch above can never fire for such a
+        # year (it is gated on the yearly summary being absent), so without this the
+        # 12-month monthly window stays polluted with no signal — the same hole that
+        # existed one level down until it was found by audit.
+        year_strays=$(ls "$MONTHLY_DIR" 2>/dev/null | grep -E "^${year}-[0-9]{2}\.md$" | tr '\n' ' ')
+        printf '\n=== ARCHIVE-ONLY DUE (year) (MANDATORY ACTION REQUIRED) ===\n'
+        printf 'Year %s already has yearly/%s.md, but its monthly summaries are still in monthly/ (newest %s, %s months old).\n' "$year" "$year" "$newest_ym" "$months_since"
+        printf 'Per MEMORY_SYSTEM.md, BEFORE responding to the user:\n'
+        printf '1. Move these to memory/episodes/monthly_backup/ - no consolidation, no summary rewrite: %s\n' "$year_strays"
+        printf '2. Do NOT delete or overwrite; if monthly_backup/ already holds that name, keep both and reconcile by hand.\n'
+        printf '3. Do NOT rewrite %s.md. A year summary is written once.\n' "$year"
+        printf 'This only retires monthly summaries from the warm window; the yearly summary already exists.\n'
+      fi
+    done
+  fi
+
   # --- _recent.md maintenance directives --------------------------------------
   # maintain-recent.py surfaces a stale Weekly Checkpoint and/or _recent.md bloat
   # here so the agent fixes them on the next update.
