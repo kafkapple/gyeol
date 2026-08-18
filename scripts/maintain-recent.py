@@ -157,7 +157,78 @@ def latest_weekly_file(weekly_dir: Path):
     return latest
 
 
+def weeks_with_logs(episodes_dir: Path) -> dict:
+    """ISO (year, week) -> sorted dates, over daily/ and daily_backup/.
+
+    Consolidated logs move to daily_backup/, so scanning daily/ alone would make
+    an old week look like a week that never happened.
+    """
+    weeks = {}
+    for sub in ("daily", "daily_backup"):
+        d = episodes_dir / sub
+        if not d.is_dir():
+            continue
+        for f in d.glob("*.md"):
+            m = re.match(r"(\d{4})-(\d{2})-(\d{2})\.md$", f.name)
+            if not m:
+                continue
+            try:
+                day = date(*(int(x) for x in m.groups()))
+            except ValueError:
+                continue
+            iso = day.isocalendar()
+            weeks.setdefault((iso[0], iso[1]), []).append(day)
+    for k in weeks:
+        weeks[k].sort()
+    return weeks
+
+
+def weeks_with_checkpoints(weekly_dir: Path) -> set:
+    """ISO (year, week) taken from the `{YYYY-Www}` filename prefix."""
+    found = set()
+    if not weekly_dir.is_dir():
+        return found
+    for f in weekly_dir.glob("*.md"):
+        m = re.match(r"(\d{4})-W(\d{2})", f.name)
+        if m:
+            found.add((int(m.group(1)), int(m.group(2))))
+    return found
+
+
+def missing_week_checkpoints(episodes_dir: Path, today: date) -> list:
+    """Weeks that have daily logs but no checkpoint, excluding the current week.
+
+    Newest-only staleness cannot see a hole behind a recent checkpoint: with W33
+    written, W19-W29 read as "up to date" and stayed invisible (10 weeks, measured
+    2026-08-18). Gaps are found by enumeration, never by looking at one end.
+    """
+    have = weeks_with_checkpoints(episodes_dir / "weekly")
+    cur = today.isocalendar()
+    out = []
+    for key, days in sorted(weeks_with_logs(episodes_dir).items()):
+        if key in have or key == (cur[0], cur[1]):
+            continue
+        out.append((key, days[0], days[-1], len(days)))
+    return out
+
+
 def weekly_checkpoint_directive(text: str, today: date, weekly_dir: Path) -> str | None:
+    episodes_dir = weekly_dir.parent
+    gaps = missing_week_checkpoints(episodes_dir, today)
+    if gaps:
+        listed = "; ".join(
+            f"{y}-W{w:02d} ({first}..{last}, {n} daily)"
+            for (y, w), first, last, n in gaps[:12]
+        )
+        more = "" if len(gaps) <= 12 else f" (+{len(gaps) - 12} more)"
+        return (
+            f"Weekly Checkpoint gaps: {len(gaps)} week(s) have daily logs but no "
+            f"`episodes/weekly/{{YYYY-Www}}_{{label}}.md`{more} -- {listed}. Write the "
+            "missing ones by reading that week's daily logs: 1-2 lines each "
+            "(Surprised / Stuck), with `week:` / `range:` / `written:` frontmatter. "
+            "\"No notable surprises\" is a valid entry; presence matters more than depth. "
+            "Doing them in batches across sessions is fine -- report which ones remain."
+        )
     last = latest_weekly_file(weekly_dir) or latest_week_header(text)
     if last is None:
         return (

@@ -86,6 +86,46 @@ echo "--- Y7: 월 단위 회귀 (연 로직 추가로 깨지지 않았나) ---"
 chk "2026-05 ARCHIVE-ONLY(day)" 1 "$(cnt 'Month 2026-05 already has')"
 chk "2026-06 MONTHLY" 1 "$(cnt 'Newest daily log of 2026-06')"
 
+
+echo "--- W1-W4: 주간 체크포인트 구멍 감지 (maintain-recent.py) ---"
+wk() { GYEOL_HOME="$H" python3 - "$H" <<'PYEOF'
+import importlib.util, sys
+from pathlib import Path
+from datetime import date
+h = Path(sys.argv[1])
+spec = importlib.util.spec_from_file_location("mr", str(Path(__file__).parent))
+import os
+mr_path = os.environ.get("MR_PATH")
+spec = importlib.util.spec_from_file_location("mr", mr_path)
+mr = importlib.util.module_from_spec(spec); spec.loader.exec_module(mr)
+print(len(mr.missing_week_checkpoints(h/"memory"/"episodes", date.today())))
+PYEOF
+}
+export MR_PATH="$BASE/../scripts/maintain-recent.py"
+mkdir -p "$H/memory/episodes/weekly" "$H/memory/episodes/daily_backup"
+rm -f "$H/memory/episodes/daily/"*.md "$H/memory/episodes/weekly/"*.md
+
+# 최근 주에는 체크포인트가 있고, 과거 주에는 없는 상태 = 구 가드가 "정상"이라 보고하던 형태
+: > "$H/memory/episodes/daily/2026-06-23.md"   # W26
+: > "$H/memory/episodes/daily/2026-06-30.md"   # W27
+: > "$H/memory/episodes/daily/2026-08-11.md"   # W33
+printf 'range: 2026-08-16\n' > "$H/memory/episodes/weekly/2026-W33_aug-w2.md"
+chk "구멍 2주 감지(W26,W27)" 2 "$(wk)"
+
+# 구멍을 메우면 0
+printf 'range: 2026-06-28\n' > "$H/memory/episodes/weekly/2026-W26_x.md"
+printf 'range: 2026-07-05\n' > "$H/memory/episodes/weekly/2026-W27_x.md"
+chk "메운 뒤 0" 0 "$(wk)"
+
+# daily_backup 에만 있는 주도 세어야 함(통합된 과거 주가 '없던 주'로 보이면 안 됨)
+: > "$H/memory/episodes/daily_backup/2026-05-05.md"   # W19
+chk "daily_backup 도 계수" 1 "$(wk)"
+
+# 이번 주는 제외
+rm -f "$H/memory/episodes/daily_backup/"*.md
+: > "$H/memory/episodes/daily/$(date +%Y-%m-%d).md"
+chk "이번 주 제외" 0 "$(wk)"
+
 echo
 echo "TOTAL: $pass passed, $fail failed"
-[ "$fail" = 0 ] && echo "YEARLY RESULT: PASS" || echo "YEARLY RESULT: FAIL"
+[ "$fail" = 0 ] && echo "RESULT: PASS" || echo "RESULT: FAIL"
