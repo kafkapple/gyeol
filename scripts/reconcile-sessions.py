@@ -64,7 +64,11 @@ KST = timezone(timedelta(hours=9))
 
 # Substantiveness: did this session edit files or run a mutating git/gh command?
 # Covers both harnesses (CC tool_use names + Codex apply_patch + shared git/gh).
-EDIT_RE = re.compile(r'"name"\s*:\s*"(?:Write|Edit|MultiEdit|NotebookEdit)"|apply_patch')
+EDIT_RE = re.compile(
+    r'"name"\s*:\s*"(?:Write|Edit|MultiEdit|NotebookEdit'
+    r'|write_to_file|replace_file_content)"|apply_patch'
+)
+USER_REQ_RE = re.compile(r"<USER_REQUEST>\s*(.*?)\s*</USER_REQUEST>", re.S)
 MUTATE_RE = re.compile(r'git commit|git push|git tag |gh pr create|gh pr merge|gh issue create|git merge ')
 
 # Strong coverage signals: the concrete outputs a session PRODUCES, which daily
@@ -308,6 +312,75 @@ def scan_codex(since: date, until: date):
         }
 
 
+def scan_antigravity(since: date, until: date):
+    """agy (Antigravity) sessions.
+
+    The live Gemini-family entry point: ~/dotfiles/shell/common.sh routes
+    a/g/gemini all to `agy`, which runs no gyeol hooks, so these sessions reach
+    neither the daily logs nor .session-log.jsonl. Without this scanner the
+    backstop reported them as nothing at all.
+
+    ponytail: cwd is "?" because the transcript has no such field -- not a
+    stub. Attribute by the prompt gist instead.
+    """
+    root = Path.home() / ".gemini" / "antigravity-cli" / "brain"
+    if not root.is_dir():
+        return
+    parsed = 0
+    for f in root.glob("*/.system_generated/logs/transcript.jsonl"):
+        first_dt = last_dt = None
+        prompt = None
+        substantive = False
+        signals: set[str] = set()
+        try:
+            for line in f.open(encoding="utf-8", errors="replace"):
+                if not line.strip():
+                    continue
+                if EDIT_RE.search(line) or MUTATE_RE.search(line):
+                    substantive = True
+                signals |= collect_signals(line)
+                try:
+                    d = json.loads(line)
+                except ValueError:
+                    continue
+                dd = kst_date(d.get("created_at") or "")
+                if dd:
+                    first_dt = dd if first_dt is None else min(first_dt, dd)
+                    last_dt = dd if last_dt is None else max(last_dt, dd)
+                if prompt is None and d.get("type") == "USER_INPUT":
+                    m = USER_REQ_RE.search(d.get("content") or "")
+                    if m:
+                        prompt = m.group(1)
+        except OSError:
+            continue
+        if first_dt is None:
+            continue
+        parsed += 1
+        sday, eday = first_dt, (last_dt or first_dt)
+        if eday < since or sday > until:
+            continue
+        yield {
+            "harness": "agy",
+            "file": str(f),
+            "session_id": f.parents[2].name,
+            "cwd": "?",
+            "repo": "?",
+            "start": sday,
+            "end": eday,
+            "substantive": substantive,
+            "signals": signals,
+            "summary": clip(clean_prompt(prompt or "")),
+        }
+    # The check: transcripts present but none parsed means the format moved,
+    # and a silent zero here is exactly the false-absence this tool exists to
+    # prevent. Say it out loud rather than reporting "no agy sessions".
+    if parsed == 0 and any(root.glob("*/.system_generated/logs/transcript.jsonl")):
+        print(
+            "warning: agy transcripts found but none yielded a date -- "
+            "the transcript format likely changed; agy coverage is UNVERIFIED",
+            file=sys.stderr,
+        )
+
 def load_daily_text(home: Path, since: date, until: date) -> dict[date, str]:
     """date -> daily-log text, from daily/ and daily_backup/ (cold archive)."""
     out: dict[date, str] = {}
@@ -406,7 +479,8 @@ def main(argv=None) -> int:
     home = gyeol_home()
     daily = load_daily_text(home, since, until)
 
-    sessions = list(scan_claude(since, until)) + list(scan_codex(since, until))
+    sessions = (list(scan_claude(since, until)) + list(scan_codex(since, until))
+                + list(scan_antigravity(since, until)))
     for s in sessions:
         s["bucket"] = classify(s, daily)
     sessions.sort(key=lambda s: (s["start"], s["harness"], s["repo"]))

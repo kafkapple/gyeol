@@ -360,9 +360,9 @@ last_updated: "{YYYY-MM-DD}"
 
 Episode recording answers "what felt worth writing." Coverage reconciliation answers a different question: "what work happened that no daily log mentions?" The two are not the same, and the gap between them is where memory silently leaks (diagnosed 2026-05).
 
-The objective ledger already exists: the harness session files (`~/.claude/projects/*/*.jsonl`, `~/.codex/sessions/**/*.jsonl`, and whatever a future harness writes). That ledger spans hands, so the reconciliation must too. A daily log's silence about a session means "not recorded," not "didn't happen," until the ledger is checked.
+The objective ledger already exists: the harness session files (`~/.claude/projects/*/*.jsonl`, `~/.codex/sessions/**/*.jsonl`, `~/.gemini/antigravity-cli/brain/*/.system_generated/logs/transcript.jsonl`, and whatever a future harness writes). That ledger spans hands, so the reconciliation must too. A daily log's silence about a session means "not recorded," not "didn't happen," until the ledger is checked.
 
-**Tool.** `scripts/reconcile-sessions.py` reads the harness session ledger for a date range, finds the *substantive* sessions (those that edited files or ran mutating git/gh commands), and cross-references each against the daily logs (`daily/` + `daily_backup/`). It surfaces three buckets:
+**Tool.** `scripts/reconcile-sessions.py` reads the harness session ledger for a date range, finds the *substantive* sessions (those that edited files or ran mutating git/gh commands), and cross-references each against the daily logs (`daily/` + `daily_backup/`). agy sessions were invisible to it until 2026-09-02; since agy runs no gyeol hooks, this scanner is their only observation surface. It surfaces three buckets:
 
 - **UNRECORDED**: substantive, with concrete output signals (PR/issue URLs, commit shas) that appear in no daily log. The most likely genuine misses.
 - **NEEDS JUDGMENT**: substantive but with no extractable signal. Slides, docs, research, and conversation live here. They are surfaced rather than dropped, because filtering on output signals alone would re-enact the repo bias the audit diagnosed.
