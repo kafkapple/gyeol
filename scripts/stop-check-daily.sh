@@ -39,7 +39,7 @@ if [ ! -d "$GYEOL_HOME/memory" ]; then
 fi
 
 INPUT=$(cat)
-SESSION_ID=$(printf '%s' "$INPUT" | jq -r '.session_id // empty')
+SESSION_ID=$(printf '%s' "$INPUT" | jq -r '.session_id // .conversationId // empty')
 
 TODAY=$(date +%Y-%m-%d)
 DAILY_LOG="$GYEOL_HOME/memory/episodes/daily/${TODAY}.md"

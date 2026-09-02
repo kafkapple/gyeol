@@ -40,7 +40,7 @@ GYEOL_HOME="${GYEOL_HOME:-$HOME/.config/gyeol}"
 LOG="$GYEOL_HOME/.session-log.jsonl"
 
 INPUT=$(cat 2>/dev/null || true)
-SESSION_ID=$(printf '%s' "$INPUT" | jq -r '.session_id // empty' 2>/dev/null || true)
+SESSION_ID=$(printf '%s' "$INPUT" | jq -r '.session_id // .conversationId // empty' 2>/dev/null || true)
 EVENT_NAME=$(printf '%s' "$INPUT" | jq -r '.hook_event_name // .event // empty' 2>/dev/null || true)
 
 # Avoid duplicate end records when both SessionEnd and Stop are wired.

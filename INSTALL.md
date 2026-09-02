@@ -309,6 +309,27 @@ What each hook enforces:
 - **Stop** → if the session is substantive but **this session** has no section in today's daily log, blocks stopping with a `decision: "block"` payload telling the agent to write it. Presence is checked by grepping today's log for `<!--sid:{first 8 chars of session id}-->` on a `## ` heading, and the payload hands over that exact marker. File existence is deliberately *not* the test: a day is routinely several sessions across several harnesses, so "the file exists" only ever enforced the day's first session (2026-09-02). A session id the harness does not supply is fail-closed. A per-session nagged flag prevents infinite loops on retry.
 - **SessionEnd** → append-only evidence record. Writes `{"end": "<UTC ISO 8601>", "cwd": "<path>"}` to `$GYEOL_HOME/.session-log.jsonl`. Cannot block exit (SessionEnd fires after the agent has stopped) and is not meant to — its purpose is to leave a breadcrumb that the *next* SessionStart's staleness check can surface. Recovers the gap when Stop never fired: clean `/clear`, harness crash, the session predating hook installation, or non-substantive sessions whose memory updates were nevertheless meaningful.
 
+### Antigravity / `agy` (if `~/.local/bin/agy` exists)
+
+**Check this first if your `gemini`/`g`/`a` alias routes to `agy`** — then the Gemini CLI
+block below is dead configuration, because agy never reads `~/.gemini/settings.json`.
+
+agy has its own hook engine with a different vocabulary: a `hooks.json` in the global
+customization root (`~/.gemini/config/`), events `PreToolUse`/`PostToolUse`/`PreInvocation`/
+`PostInvocation`/`Stop`, camelCase payloads (`conversationId`, not `session_id`), and a Stop
+contract where **`decision: "continue"` is what blocks the stop** — the opposite polarity of
+the other harnesses' `block`/`deny`. `GYEOL_BLOCK_DECISION=continue` covers that; the scripts
+already accept `conversationId` as a `session_id` fallback.
+
+Copy `hooks.agy.json` to `~/.gemini/config/hooks.json` (merge if one exists — top-level keys
+are hook *names*, so `gyeol` can sit beside others). Verify with
+`agy --log-file /tmp/agy.log -p "say ok"` and grep the log for
+`loaded 1 named hooks from 1 hooks.json file(s)`.
+
+There is **no `SessionStart` equivalent**, so identity bootstrap does not run on agy; only the
+recording circuit does. `session-end.sh` is likewise unwired there — `Stop` is the only exit
+event, and it is already used for the daily-log check.
+
 ### Gemini CLI (if `~/.gemini/` exists)
 
 Gemini CLI ships a Claude-Code-compatible hook engine (verified against `docs/hooks/reference.md` on `google-gemini/gemini-cli@main`). Edit `~/.gemini/settings.json` (create it if missing) and merge the following into the top-level `hooks` key:

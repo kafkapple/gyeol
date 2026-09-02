@@ -15,7 +15,7 @@
 set -eu
 
 INPUT=$(cat)
-SESSION_ID=$(printf '%s' "$INPUT" | jq -r '.session_id // empty')
+SESSION_ID=$(printf '%s' "$INPUT" | jq -r '.session_id // .conversationId // empty')
 CMD=$(printf '%s' "$INPUT" | jq -r '.tool_input.command // empty')
 
 [ -n "$SESSION_ID" ] || exit 0

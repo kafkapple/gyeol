@@ -10,7 +10,7 @@
 set -eu
 
 INPUT=$(cat)
-SESSION_ID=$(printf '%s' "$INPUT" | jq -r '.session_id // empty')
+SESSION_ID=$(printf '%s' "$INPUT" | jq -r '.session_id // .conversationId // empty')
 
 [ -n "$SESSION_ID" ] || exit 0
 

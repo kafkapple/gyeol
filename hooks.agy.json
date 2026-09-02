@@ -1,0 +1,33 @@
+{
+  "gyeol": {
+    "PostToolUse": [
+      {
+        "matcher": "write_to_file|replace_file_content",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "sh \"$HOME/.config/gyeol/scripts/post-mark-substantive.sh\" >/dev/null 2>&1 || true; echo '{}'",
+            "timeout": 10
+          }
+        ]
+      },
+      {
+        "matcher": "run_command",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "sh \"$HOME/.config/gyeol/scripts/post-mark-substantive-if-commit.sh\" >/dev/null 2>&1 || true; echo '{}'",
+            "timeout": 10
+          }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "type": "command",
+        "command": "GYEOL_BLOCK_DECISION=continue sh \"$HOME/.config/gyeol/scripts/stop-check-daily.sh\" 2>/dev/null || echo '{}'",
+        "timeout": 20
+      }
+    ]
+  }
+}
