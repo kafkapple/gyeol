@@ -17,8 +17,12 @@ human/reflection judgment a script cannot make. Off-harness work (meetings,
 external tools, thinking away from the keyboard) is structurally invisible here;
 completeness is knowing what you cannot see, not pretending to see it.
 
-The ledger is also mortal: Claude Code prunes its session transcripts at roughly
-30 days, while Codex keeps a permanent date tree. Run this within that window.
+The ledger is also mortal: Claude Code prunes its session transcripts after
+`cleanupPeriodDays` in ~/.claude/settings.json -- read at runtime, not assumed. It
+is 14 on this machine (2026-09-02), not the 30-day default, so a monthly run used
+to report a clean first fortnight it could no longer see. Codex keeps a permanent
+date tree. Past the TTL a clean report means the ledger is gone, not that nothing
+happened.
 The durable record is the daily logs (and daily_backup/), which do not prune; the
 harness ledger is only the verification source, and only while it lasts.
 
@@ -34,7 +38,7 @@ Output buckets:
 Usage:
   reconcile-sessions.py --month 2026-05
   reconcile-sessions.py --since 2026-06-01 --until 2026-06-08
-  reconcile-sessions.py                 # default: last 30 days
+  reconcile-sessions.py                 # default: the Claude ledger's TTL
   reconcile-sessions.py --all           # include COVERED sessions
   reconcile-sessions.py --json          # machine-readable
 
@@ -349,11 +353,35 @@ def classify(sess: dict, daily: dict[date, str]) -> str:
 def parse_args(argv):
     ap = argparse.ArgumentParser(description="Surface sessions missing from gyeol daily logs.")
     ap.add_argument("--month", help="YYYY-MM (whole month)")
-    ap.add_argument("--since", help="YYYY-MM-DD (default: 30 days ago)")
+    ap.add_argument("--since", help="YYYY-MM-DD (default: the Claude ledger's TTL ago)")
     ap.add_argument("--until", help="YYYY-MM-DD (default: today)")
     ap.add_argument("--all", action="store_true", help="include COVERED sessions")
     ap.add_argument("--json", action="store_true", help="machine-readable output")
     return ap.parse_args(argv)
+
+
+def claude_ledger_ttl_days(default: int = 30) -> int:
+    """Days Claude Code keeps session transcripts (`cleanupPeriodDays`).
+
+    Hard-coding 30 produced a false green: this machine prunes at 14, so any run
+    reaching further back reported "nothing unrecorded" for a window it could not
+    actually see. Read the setting instead of assuming it.
+
+    A non-positive value is treated as unset on purpose, not by accident: 0 is
+    ambiguous (keep forever, or prune immediately?) and picking either reading
+    would be inventing a semantics the setting does not document. `is not None`
+    keeps that decision explicit rather than letting 0 fall through a truthiness
+    test the way the old hard-coded 30 did.
+    """
+    try:
+        with open(os.path.expanduser("~/.claude/settings.json")) as fh:
+            v = json.load(fh).get("cleanupPeriodDays")
+        if v is None:
+            return default
+        n = int(v)
+        return n if n > 0 else default
+    except Exception:
+        return default
 
 
 def resolve_range(a) -> tuple[date, date]:
@@ -363,7 +391,7 @@ def resolve_range(a) -> tuple[date, date]:
         e = date(y + (m == 12), (m % 12) + 1, 1) - timedelta(days=1)
         return s, e
     today = date.today()
-    s = datetime.strptime(a.since, "%Y-%m-%d").date() if a.since else today - timedelta(days=30)
+    s = datetime.strptime(a.since, "%Y-%m-%d").date() if a.since else today - timedelta(days=claude_ledger_ttl_days())
     e = datetime.strptime(a.until, "%Y-%m-%d").date() if a.until else today
     return s, e
 
@@ -429,7 +457,9 @@ def main(argv=None) -> int:
     print("This surfaces; you judge episode-worth. Off-harness work (meetings, "
           "external tools) is invisible here, so absence here is not proof of nothing.")
     print("The durable record is the daily logs (+daily_backup); the harness ledger "
-          "is mortal (Claude Code prunes ~30d), so run within that window.")
+          f"is mortal (Claude Code prunes at {claude_ledger_ttl_days()}d), so run "
+          "within that window \u2014 a clean report older than that means the ledger "
+          "is gone, not that nothing happened.")
     return 0
 
 

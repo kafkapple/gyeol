@@ -207,7 +207,26 @@ Episodic memory. What remains after a conversation — decisions, context, open 
 
 Per-date session record. **Newest session first** — insert the new block directly under the
 `# {date}` heading, above the previous session, separated by `---`. The top of the file is the
-latest state, so opening it answers "where did I leave off" without scrolling. Bump `sessions:`.
+latest state, so opening it answers "where did I leave off" without scrolling.
+
+**Every section carries a `sid` marker** — `<!--sid:{first 8 chars of session id}-->` at the end of
+its `## S{n}` heading. `stop-check-daily.sh` greps for it; without it the Stop hook asks again,
+because "today's file exists" does not mean "this session was recorded". The hook prints the exact
+marker to paste. `{n}` continues the day's numbering and is advisory — the marker identifies a
+session, the number does not.
+**Legacy headings are frozen — do not migrate them.** Sections written before this convention read
+`## Session {n}`; they are the record of the convention in force when they were written, and
+rewriting them would forge that. Cheapness is not a reason to touch them. Nothing parses either form.
+A day is commonly several sessions across more than one harness:
+**add your section, never rewrite another's**. The `sessions:` frontmatter count is **retired
+(2026-09-02)** — it drifted from the real section count and nothing read it.
+
+**Lost-update hazard.** Per-session recording means every substantive session edits this one file,
+where before only the day's first one created it. Two sessions that read before either writes will
+drop the earlier section, and its `sid` marker with it. **Re-read immediately before inserting**,
+and insert with a single edit anchored on the `# {date}` heading rather than rewriting the file.
+A harness that supplies no `session_id` cannot be tracked per session at all — the hook says so in
+its message and falls back to the file-existence test there.
 
 Section shape mirrors what the harness shows in its session-close briefing, so what is shown at
 session end is what gets stored — write once, no re-authoring, no format drift. The schema below is
@@ -217,12 +236,11 @@ the format there.
 ```markdown
 ---
 date: "{YYYY-MM-DD}"
-sessions: {count}
 ---
 
 # {YYYY-MM-DD}
 
-## Session 1 — {HH:MM} — {one-line summary}
+## S{n} — {HH:MM}–{HH:MM} — {one-line summary} <!--sid:xxxxxxxx-->
 
 ### tldr
 {One sentence: what actually changed.}

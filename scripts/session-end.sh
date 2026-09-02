@@ -8,8 +8,8 @@
 # Why a separate evidence-recording hook (instead of, say, blocking exit
 # the way Stop / AfterAgent do): SessionEnd fires AFTER the agent has
 # stopped, so it cannot make the agent do work. Stop / AfterAgent already
-# handle the "block exit when today's daily log is missing AND the session
-# was substantive" case. SessionEnd handles the complementary case: the
+# handle the "block exit when this session has no section in today's daily
+# log AND the session was substantive" case. SessionEnd handles the complementary case: the
 # session ended cleanly (or the substantive-flag path failed, or the user
 # /clear'd, or the harness crashed mid-session) and the next session needs
 # to know the gap exists.
